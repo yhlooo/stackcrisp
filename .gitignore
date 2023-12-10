@@ -27,3 +27,6 @@ go.work
 
 # MacOS
 .DS_Store
+
+# Outputs
+outputs/
