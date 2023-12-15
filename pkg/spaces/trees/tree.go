@@ -45,6 +45,11 @@ type Tree interface {
 	UpdateBranch(name string, nodeID uid.UID, force bool) error
 }
 
+// NewTree 创建一个 Tree
+func NewTree() Tree {
+	return &defaultTree{}
+}
+
 // defaultTree 是 Tree 的一个默认实现
 type defaultTree struct {
 	root Node
