@@ -3,41 +3,20 @@ package mounts
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/yhlooo/stackcrisp/pkg/layers"
+)
+
+const (
+	mountDataSubPathMountPath = "merged"
+	mountDataSubPathWorkDir   = "work"
 )
 
 // MountOptions 挂载选项
 type MountOptions struct {
 	MountDataRoot string
 }
-
-// Mount 挂载
-type Mount interface {
-	// MountPath 返回挂载点绝对路径
-	MountPath() string
-	// Umount 卸载
-	Umount() error
-}
-
-// defaultMount 是 Mount 的一个默认实现
-type defaultMount struct {
-	mountPath string
-}
-
-var _ Mount = &defaultMount{}
-
-// MountPath 返回挂载点绝对路径
-func (m *defaultMount) MountPath() string {
-	return m.mountPath
-}
-
-const (
-	mountDataSubPathMountPath = "merged"
-	mountDataSubPathWorkDir   = "work"
-)
 
 // New 创建一个挂载
 func New(ctx context.Context, layers []layers.Layer, opts MountOptions) (Mount, error) {
@@ -65,20 +44,29 @@ func New(ctx context.Context, layers []layers.Layer, opts MountOptions) (Mount, 
 		ReadOnly:  false,
 	}
 
-	// 确保相关目录存在
-	if err := os.Mkdir(mountPath, 0755); err != nil && !os.IsExist(err) {
-		return nil, fmt.Errorf("mkdir %q error: %w", mountPath, err)
-	}
-	if err := os.Mkdir(workDir, 0755); err != nil && !os.IsExist(err) {
-		return nil, fmt.Errorf("mkdir %q error: %w", workDir, err)
-	}
-
-	// 挂载
-	if err := CreateOverlayMount(ovlOpts); err != nil {
-		return nil, err
-	}
-
 	return &defaultMount{
-		mountPath: mountPath,
+		ovlOpts: ovlOpts,
 	}, nil
+}
+
+// Mount 挂载
+type Mount interface {
+	// MountPath 返回挂载点绝对路径
+	MountPath() string
+	// Mount 挂载
+	Mount() error
+	// Umount 卸载
+	Umount() error
+}
+
+// defaultMount 是 Mount 的一个默认实现
+type defaultMount struct {
+	ovlOpts OverlayMountOptions
+}
+
+var _ Mount = &defaultMount{}
+
+// MountPath 返回挂载点绝对路径
+func (m *defaultMount) MountPath() string {
+	return m.ovlOpts.MountPath
 }

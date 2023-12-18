@@ -5,8 +5,17 @@ import (
 	"os"
 	"path/filepath"
 
+	fsutil "github.com/yhlooo/stackcrisp/pkg/utils/fs"
 	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 )
+
+// NewLayer 创建一个 Layer
+func NewLayer(id uid.UID, layerDataRoot string) Layer {
+	return &defaultLayer{
+		id:            id,
+		layerDataRoot: layerDataRoot,
+	}
+}
 
 // Layer 层
 type Layer interface {
@@ -14,6 +23,8 @@ type Layer interface {
 	ID() uid.UID
 	// DiffDir 返回 diff 目录路径
 	DiffDir() string
+	// Save 将相关信息持久化
+	Save() error
 }
 
 const layerDataSubPathDiff = "diff"
@@ -36,14 +47,13 @@ func (l *defaultLayer) DiffDir() string {
 	return filepath.Join(l.layerDataRoot, layerDataSubPathDiff)
 }
 
-// NewLayer 创建一个 Layer
-func NewLayer(id uid.UID, layerDataRoot string) (Layer, error) {
-	l := &defaultLayer{
-		id:            id,
-		layerDataRoot: layerDataRoot,
+// Save 将相关信息持久化
+func (l *defaultLayer) Save() error {
+	// 创建 diff 目录
+	if !fsutil.IsDir(l.DiffDir()) {
+		if err := os.Mkdir(l.DiffDir(), 0755); err != nil {
+			return fmt.Errorf("make dir %q for layer diff error: %w", l.DiffDir(), err)
+		}
 	}
-	if err := os.Mkdir(l.DiffDir(), 0755); err != nil {
-		return l, fmt.Errorf("make dir %q for layer diff error: %w", l.DiffDir(), err)
-	}
-	return l, nil
+	return nil
 }

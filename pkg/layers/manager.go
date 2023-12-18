@@ -13,6 +13,13 @@ import (
 	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 )
 
+// NewLayerManager 创建一个 LayerManager
+func NewLayerManager(layersDataRoot string) LayerManager {
+	return &defaultLayerManager{
+		layersDataRoot: layersDataRoot,
+	}
+}
+
 // LayerManager 层管理器
 type LayerManager interface {
 	// Create 创建一个层
@@ -42,8 +49,8 @@ func (mgr *defaultLayerManager) Create(_ context.Context) (Layer, error) {
 		return nil, fmt.Errorf("make dir %q for layer data root error: %w", rootDir, err)
 	}
 	// 创建层
-	l, err := NewLayer(id, rootDir)
-	if err != nil {
+	l := NewLayer(id, rootDir)
+	if err := l.Save(); err != nil {
 		return nil, err
 	}
 	return l, nil
@@ -110,11 +117,4 @@ func (mgr *defaultLayerManager) Delete(_ context.Context, id uid.UID) (Layer, er
 // getLayerDataRoot 获取层数据目录
 func (mgr *defaultLayerManager) getLayerDataRoot(id uid.UID) string {
 	return filepath.Join(mgr.layersDataRoot, id.Base32())
-}
-
-// NewLayerManager 创建一个 LayerManager
-func NewLayerManager(layersDataRoot string) LayerManager {
-	return &defaultLayerManager{
-		layersDataRoot: layersDataRoot,
-	}
 }
