@@ -3,6 +3,7 @@ package mounts
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/yhlooo/stackcrisp/pkg/layers"
@@ -57,6 +58,8 @@ type Mount interface {
 	Mount() error
 	// Umount 卸载
 	Umount() error
+	// CreateSymlink 在指定路径创建访问挂载点的软链
+	CreateSymlink(path string) error
 }
 
 // defaultMount 是 Mount 的一个默认实现
@@ -69,4 +72,9 @@ var _ Mount = &defaultMount{}
 // MountPath 返回挂载点绝对路径
 func (m *defaultMount) MountPath() string {
 	return m.ovlOpts.MountPath
+}
+
+// CreateSymlink 在指定路径创建访问挂载点的软链
+func (m *defaultMount) CreateSymlink(path string) error {
+	return os.Symlink(m.ovlOpts.MountPath, path)
 }
