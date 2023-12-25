@@ -4,6 +4,7 @@ import (
 	"encoding/base32"
 	"encoding/hex"
 	"fmt"
+	"hash"
 	"math/rand"
 	"time"
 )
@@ -78,4 +79,12 @@ func DecodeUID128FromBase32(in string) (UID, error) {
 		return nil, err
 	}
 	return uid128(ret), err
+}
+
+// NewUID128FromHash 通过指定哈希算法生成一个 128 位 UID
+// 如果哈希算法输出大于 128 位，则取高 128 位，不足 128 位则以 0 补足
+func NewUID128FromHash(data []byte, algorithm func() hash.Hash) UID {
+	h := algorithm()
+	_, _ = h.Write(data)
+	return uid128(h.Sum(nil))
 }

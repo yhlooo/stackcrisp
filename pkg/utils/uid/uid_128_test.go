@@ -1,8 +1,11 @@
 package uid
 
 import (
+	"crypto/md5"
+	"crypto/sha256"
 	"encoding/base32"
 	"encoding/hex"
+	"hash"
 	"reflect"
 	"regexp"
 	"strings"
@@ -113,5 +116,23 @@ func TestDecodeUID128FromString(t *testing.T) {
 	}
 	if _, err := DecodeUID128FromBase32(in[:24] + "xx"); err == nil || err != base32.CorruptInputError(24) {
 		t.Errorf("expected CorruptInputError error, but: %v", err)
+	}
+}
+
+// TestNewUID128FromHash 测试 NewUID128FromHash 方法
+func TestNewUID128FromHash(t *testing.T) {
+	cases := [][]interface{}{
+		{[]byte("Hello World!"), md5.New, "ed076287532e86365e841e92bfc50d8c"},
+		{[]byte("Hello World!"), sha256.New, "7f83b1657ff1fc53b92dc18148a1d65d"},
+	}
+
+	for i, c := range cases {
+		data := c[0].([]byte)
+		algorithm := c[1].(func() hash.Hash)
+		expected := c[2].(string)
+		ret := NewUID128FromHash(data, algorithm)
+		if ret.Hex() != expected {
+			t.Errorf("unexpected result of the case %d: %s (expected: %s)", i, ret.Hex(), expected)
+		}
 	}
 }
