@@ -20,13 +20,15 @@ type MountOptions struct {
 }
 
 // New 创建一个挂载
-func New(ctx context.Context, layers []layers.Layer, opts MountOptions) (Mount, error) {
+//
+// layers 中第 0 到 n-2 个元素是 lower 层，其中 n-2 层是最顶层。第 n-1 层是 upper 层。
+func New(_ context.Context, layers []layers.Layer, opts MountOptions) (Mount, error) {
 	// 最少需要两层，一层 lower 一层 upper
 	if len(layers) < 2 {
 		return nil, fmt.Errorf("length of layers is %d, too few, no less than 2", len(layers))
 	}
 
-	// 0 - n-1 是 lower
+	// 0 - n-2 是 lower
 	lowerDir := make([]string, len(layers)-1)
 	for i, l := range layers[:len(layers)-1] {
 		lowerDir[len(layers)-i-2] = l.DiffDir()

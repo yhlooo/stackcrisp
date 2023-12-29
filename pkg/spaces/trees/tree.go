@@ -22,26 +22,33 @@ type Tree interface {
 	// Branches 获取分支与其头指针节点的映射关系的一个只读副本
 	Branches() map[string]Node
 	// Search 通过 key 搜索节点
+	//
 	// key 可以是各种形式的节点 ID 、分支名、标签名
 	Search(key string) (Node, bool)
 
 	// AddNode 往树上添加节点
+	//
+	// 如果 parentID 为 nil 就是插入根节点
 	AddNode(parentID uid.UID, node Node) error
 
 	// TODO: DeleteNode(id uid.UID) bool
 
 	// AddTag 添加标签
+	//
 	// 可以覆盖同名标签
 	AddTag(name string, nodeID uid.UID) error
 	// DeleteTag 删除标签
+	//
 	// 删除成功则返回 true 、不存在则返回 false
 	DeleteTag(name string) bool
 	// AddBranch 添加分支
+	//
 	// 可以覆盖同名分支
 	AddBranch(name string, nodeID uid.UID) error
 	// UpdateBranch 更新分支头指针
-	// force = true: 允许将分支头指针移动任何位置
-	// force = false: 仅允许将分支头指针移动到当前位置的子节点
+	//
+	// - force = true: 允许将分支头指针移动任何位置
+	// - force = false: 仅允许将分支头指针移动到当前位置的子节点
 	UpdateBranch(name string, nodeID uid.UID, force bool) error
 }
 
@@ -132,6 +139,7 @@ func (tree *defaultTree) Branches() map[string]Node {
 }
 
 // Search 通过 key 搜索节点
+//
 // key 可以是各种形式的节点 ID 、分支名、标签名
 func (tree *defaultTree) Search(key string) (Node, bool) {
 	// 首先尝试从节点 ID 搜索
@@ -162,6 +170,8 @@ func (tree *defaultTree) Search(key string) (Node, bool) {
 }
 
 // AddNode 往树上添加节点
+//
+// 如果 parentID 为 nil 就是插入根节点
 func (tree *defaultTree) AddNode(parentID uid.UID, node Node) error {
 	tree.nodesLock.Lock()
 	defer tree.nodesLock.Unlock()
@@ -193,6 +203,7 @@ func (tree *defaultTree) AddNode(parentID uid.UID, node Node) error {
 }
 
 // AddTag 添加标签
+//
 // 可以覆盖同名标签
 func (tree *defaultTree) AddTag(name string, nodeID uid.UID) error {
 	tree.tagsLock.Lock()
@@ -216,6 +227,7 @@ func (tree *defaultTree) AddTag(name string, nodeID uid.UID) error {
 }
 
 // DeleteTag 删除标签
+//
 // 删除成功则返回 true 、不存在则返回 false
 func (tree *defaultTree) DeleteTag(name string) bool {
 	tree.tagsLock.Lock()
@@ -230,6 +242,7 @@ func (tree *defaultTree) DeleteTag(name string) bool {
 }
 
 // AddBranch 添加分支
+//
 // 可以覆盖同名分支
 func (tree *defaultTree) AddBranch(name string, nodeID uid.UID) error {
 	tree.branchesLock.Lock()
@@ -254,8 +267,9 @@ func (tree *defaultTree) AddBranch(name string, nodeID uid.UID) error {
 }
 
 // UpdateBranch 更新分支头指针
-// force = true: 允许将分支头指针移动任何位置
-// force = false: 仅允许将分支头指针移动到当前位置的子节点
+//
+// - force = true: 允许将分支头指针移动任何位置
+// - force = false: 仅允许将分支头指针移动到当前位置的子节点
 func (tree *defaultTree) UpdateBranch(name string, nodeID uid.UID, force bool) error {
 	tree.branchesLock.Lock()
 	defer tree.branchesLock.Unlock()
@@ -306,6 +320,7 @@ func (tree *defaultTree) UpdateBranch(name string, nodeID uid.UID, force bool) e
 }
 
 // updateIndexes 更新索引
+//
 // 将 node 及其子节点添加到索引中
 func (tree *defaultTree) updateIndexes(node Node, lock bool) {
 	if lock {

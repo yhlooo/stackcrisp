@@ -42,10 +42,15 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 	// 绑定选项到命令行参数
 	opts.Global.AddPFlags(cmd.PersistentFlags())
 
+	// 添加子命令
+	cmd.AddCommand(
+		NewInitCommandWithOptions(opts.Init, &opts.Global),
+	)
+
 	return cmd
 }
 
 // NewStackCrispCommand 使用默认选项创建一个 stackcrisp 命令
 func NewStackCrispCommand() *cobra.Command {
-	return NewStackCrispCommandWithOptions(options.Options{})
+	return NewStackCrispCommandWithOptions(options.NewDefaultOptions())
 }
