@@ -7,6 +7,6 @@ type UID interface {
 	// Base32 返回 base32 编码表示
 	Base32() string
 	// String 返回字符串表示
-	// 与 Base32 结果一致
+	// 格式为 `{hex}({base32})`
 	String() string
 }

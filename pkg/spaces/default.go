@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/go-logr/logr"
+
 	"github.com/yhlooo/stackcrisp/pkg/layers"
 	"github.com/yhlooo/stackcrisp/pkg/mounts"
 	"github.com/yhlooo/stackcrisp/pkg/spaces/trees"
@@ -16,6 +18,7 @@ import (
 
 const (
 	spaceDataSubPathTree = "tree.json"
+	loggerName           = "spaces"
 
 	// RootTag 根节点标签
 	RootTag = "ROOT"
@@ -41,16 +44,21 @@ var _ Space = &defaultSpace{}
 
 // Init 初始化
 func (space *defaultSpace) Init(ctx context.Context) error {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
 	// 创建树
 	space.layerTree = trees.NewTree()
 	// 创建根节点
+	logger.Info("creating root layer ...")
 	rootLayer, err := space.layerManger.Create(ctx)
 	if err != nil {
 		return fmt.Errorf("create root layer error: %w", err)
 	}
+	logger.V(1).Info(fmt.Sprintf("add root layer %s to tree", rootLayer.ID()))
 	if err := space.layerTree.AddNode(nil, trees.NewNode(rootLayer.ID())); err != nil {
 		return fmt.Errorf("add root layer to tree error: %w", err)
 	}
+	logger.V(1).Info("add root layer tag")
 	if err := space.layerTree.AddTag(RootTag, rootLayer.ID()); err != nil {
 		return fmt.Errorf("add root tag error: %w", err)
 	}
@@ -58,8 +66,11 @@ func (space *defaultSpace) Init(ctx context.Context) error {
 }
 
 // Load 加载数据
-func (space *defaultSpace) Load(context.Context) error {
+func (space *defaultSpace) Load(ctx context.Context) error {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
 	// 读取树
+	logger.V(1).Info(fmt.Sprintf("reading tree dump from %q ...", space.treeDumpSavePath()))
 	raw, err := os.ReadFile(space.treeDumpSavePath())
 	if err != nil && errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("read tree dump error: %w", err)
@@ -79,8 +90,11 @@ func (space *defaultSpace) Load(context.Context) error {
 }
 
 // Save 将数据持久化
-func (space *defaultSpace) Save(context.Context) error {
+func (space *defaultSpace) Save(ctx context.Context) error {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
 	// 导出树
+	logger.V(1).Info("dumping tree ...")
 	dump := trees.Dump(space.layerTree)
 	// json 序列化
 	raw, err := json.Marshal(&dump)
@@ -88,6 +102,7 @@ func (space *defaultSpace) Save(context.Context) error {
 		return fmt.Errorf("marshal tree dump to json error: %w", err)
 	}
 	// 写文件
+	logger.V(1).Info(fmt.Sprintf("writing tree dump to %q ...", space.treeDumpSavePath()))
 	if err := os.WriteFile(space.treeDumpSavePath(), raw, 0644); err != nil {
 		return fmt.Errorf("write tree dump error: %w", err)
 	}
@@ -101,16 +116,20 @@ func (space *defaultSpace) CreateMount(
 	revision string,
 	mountOpts mounts.MountOptions,
 ) (mounts.Mount, error) {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
 	// 找到 lower 的最上层节点
 	lowerNode, ok := space.layerTree.Search(revision)
 	if !ok {
 		return nil, fmt.Errorf("layer %q not found", revision)
 	}
 	// 创建一个作为 upper 层的节点
+	logger.Info("creating upper layer ...")
 	upper, err := space.layerManger.Create(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("create upper layer error: %w", err)
 	}
+	logger.V(1).Info(fmt.Sprintf("add upper layer %s to tree", upper.ID()))
 	if err := space.layerTree.AddNode(lowerNode.ID(), trees.NewNode(upper.ID())); err != nil {
 		return nil, fmt.Errorf("add upper layer to tree error: %w", err)
 	}
@@ -129,6 +148,7 @@ func (space *defaultSpace) CreateMount(
 	// 加上 upper 层
 	layerSet = append(layerSet, upper)
 
+	logger.V(1).Info(fmt.Sprintf("mount layers: %v", layerSet))
 	return mounts.New(ctx, layerSet, mountOpts)
 }
 

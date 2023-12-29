@@ -9,6 +9,10 @@ import (
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
 )
 
+const (
+	loggerName = "commands"
+)
+
 // NewStackCrispCommandWithOptions 创建一个基于选项的 stackcrisp 命令
 func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 	cmd := &cobra.Command{

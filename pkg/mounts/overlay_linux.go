@@ -3,22 +3,29 @@
 package mounts
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"syscall"
+
+	"github.com/go-logr/logr"
 )
 
 // CreateOverlayMount 创建一个 Overlay 挂载
-func CreateOverlayMount(opts OverlayMountOptions) error {
+func CreateOverlayMount(ctx context.Context, opts OverlayMountOptions) error {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
 	// 挂载标记
 	var flags uintptr
+	var showOpts string
 	if opts.ReadOnly {
 		flags |= syscall.MS_RDONLY
+		showOpts = "ro,"
 	}
-	// 挂载点
-	mountPath := opts.MountPath
-	if mountPath == "" {
-		mountPath = "overlay"
+	// 挂载名
+	source := opts.Source
+	if source == "" {
+		source = "overlay"
 	}
 	// 挂载参数
 	data := fmt.Sprintf(
@@ -28,5 +35,7 @@ func CreateOverlayMount(opts OverlayMountOptions) error {
 		opts.WorkDir,
 	)
 
-	return syscall.Mount(opts.Source, mountPath, "overlay", flags, data)
+	showOpts += data
+	logger.V(1).Info(fmt.Sprintf("mount -t overlay %q -o %q %q", source, showOpts, opts.MountPath))
+	return syscall.Mount(source, opts.MountPath, "overlay", flags, data)
 }

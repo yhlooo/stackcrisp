@@ -21,4 +21,8 @@ type Manager interface {
 type Options struct {
 	// 数据存储根目录
 	DataRoot string
+	// 修改空间中存储文件所属用户 ID ， -1 表示不修改
+	ChownUID int
+	// 修改空间中存储文件所属用户组 ID ， -1 表示不修改
+	ChownGID int
 }

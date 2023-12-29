@@ -6,23 +6,31 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-logr/logr"
+
 	"github.com/yhlooo/stackcrisp/pkg/layers"
 )
 
 const (
 	mountDataSubPathMountPath = "merged"
 	mountDataSubPathWorkDir   = "work"
+
+	loggerName = "mounts"
 )
 
 // MountOptions 挂载选项
 type MountOptions struct {
 	MountDataRoot string
+	ChownUID      int
+	ChownGID      int
 }
 
 // New 创建一个挂载
 //
 // layers 中第 0 到 n-2 个元素是 lower 层，其中 n-2 层是最顶层。第 n-1 层是 upper 层。
-func New(_ context.Context, layers []layers.Layer, opts MountOptions) (Mount, error) {
+func New(ctx context.Context, layers []layers.Layer, opts MountOptions) (Mount, error) {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
 	// 最少需要两层，一层 lower 一层 upper
 	if len(layers) < 2 {
 		return nil, fmt.Errorf("length of layers is %d, too few, no less than 2", len(layers))
@@ -47,8 +55,11 @@ func New(_ context.Context, layers []layers.Layer, opts MountOptions) (Mount, er
 		ReadOnly:  false,
 	}
 
+	logger.V(1).Info(fmt.Sprintf("overlay mount options: %#v", ovlOpts))
 	return &defaultMount{
-		ovlOpts: ovlOpts,
+		ovlOpts:  ovlOpts,
+		chownUID: opts.ChownUID,
+		chownGID: opts.ChownGID,
 	}, nil
 }
 
@@ -57,16 +68,18 @@ type Mount interface {
 	// MountPath 返回挂载点绝对路径
 	MountPath() string
 	// Mount 挂载
-	Mount() error
+	Mount(ctx context.Context) error
 	// Umount 卸载
-	Umount() error
+	Umount(ctx context.Context) error
 	// CreateSymlink 在指定路径创建访问挂载点的软链
-	CreateSymlink(path string) error
+	CreateSymlink(ctx context.Context, path string) error
 }
 
 // defaultMount 是 Mount 的一个默认实现
 type defaultMount struct {
-	ovlOpts OverlayMountOptions
+	ovlOpts  OverlayMountOptions
+	chownUID int
+	chownGID int
 }
 
 var _ Mount = &defaultMount{}
@@ -77,6 +90,14 @@ func (m *defaultMount) MountPath() string {
 }
 
 // CreateSymlink 在指定路径创建访问挂载点的软链
-func (m *defaultMount) CreateSymlink(path string) error {
-	return os.Symlink(m.ovlOpts.MountPath, path)
+func (m *defaultMount) CreateSymlink(ctx context.Context, path string) error {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+	logger.V(1).Info(fmt.Sprintf("ln -s %q %q", m.ovlOpts.MountPath, path))
+	if err := os.Symlink(m.ovlOpts.MountPath, path); err != nil {
+		return err
+	}
+	if err := os.Lchown(path, m.chownUID, m.chownGID); err != nil {
+		return fmt.Errorf("chown %q to \"%d:%d\" error: %w", path, m.chownUID, m.chownGID, err)
+	}
+	return nil
 }

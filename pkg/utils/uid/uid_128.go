@@ -29,7 +29,7 @@ func (uid uid128) Base32() string {
 // String 返回字符串表示
 // 与 Base32 结果一致
 func (uid uid128) String() string {
-	return uid.Base32()
+	return fmt.Sprintf("%s(%s)", uid.Hex(), uid.Base32())
 }
 
 // randObj 随机数生成器

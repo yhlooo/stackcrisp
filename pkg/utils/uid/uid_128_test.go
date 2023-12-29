@@ -30,8 +30,8 @@ func TestNewUID128(t *testing.T) {
 			t.Errorf("repeat with previous result: %q", uid)
 		}
 		// 检查是否有非预期格式的输出
-		if hex := uid.Hex(); !uid128HexRegexp.MatchString(hex) {
-			t.Errorf("unexpected hex result: %q (not match %q)", hex, uid128HexRegexp.String())
+		if hexRet := uid.Hex(); !uid128HexRegexp.MatchString(hexRet) {
+			t.Errorf("unexpected hex result: %q (not match %q)", hexRet, uid128HexRegexp.String())
 		}
 		if b32 := uid.Base32(); !uid128Base32Regexp.MatchString(b32) {
 			t.Errorf("unexpected base32 result: %q (not match %q)", b32, uid128Base32Regexp.String())
@@ -64,7 +64,7 @@ func TestUid128_Base32(t *testing.T) {
 // TestUid128_String 测试 uid128.String 方法
 func TestUid128_String(t *testing.T) {
 	in := uid128{123, 45, 67, 8, 90, 98, 76, 54, 32, 1, 233, 66, 99, 6, 71, 34}
-	expected := in.Base32()
+	expected := "7b2d43085a624c362001e94263064722(PMWUGCC2MJGDMIAB5FBGGBSHEI)"
 	ret := in.String()
 	if ret != expected {
 		t.Errorf("unexpected result: %q (expected %q)", ret, expected)
@@ -95,8 +95,8 @@ func TestDecodeUID128FromHex(t *testing.T) {
 	}
 }
 
-// TestDecodeUID128FromString 测试 DecodeUID128FromString 方法
-func TestDecodeUID128FromString(t *testing.T) {
+// TestDecodeUID128FromBase32 测试 DecodeUID128FromBase32 方法
+func TestDecodeUID128FromBase32(t *testing.T) {
 	in := "PMWUGCC2MJGDMIAB5FBGGBSHEI"
 	expected := uid128{123, 45, 67, 8, 90, 98, 76, 54, 32, 1, 233, 66, 99, 6, 71, 34}
 	ret, err := DecodeUID128FromBase32(in)
