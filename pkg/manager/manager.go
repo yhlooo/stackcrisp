@@ -3,18 +3,21 @@ package manager
 import (
 	"context"
 
-	"github.com/yhlooo/stackcrisp/pkg/mounts"
-	"github.com/yhlooo/stackcrisp/pkg/spaces"
+	"github.com/yhlooo/stackcrisp/pkg/workspaces"
 )
 
 // Manager 管理器
 type Manager interface {
 	// Prepare 准备
 	Prepare(ctx context.Context) error
-	// CreateSpace 创建一个存储空间
-	CreateSpace(ctx context.Context) (spaces.Space, error)
-	// CreateMount 使用指定空间版本创建一个挂载
-	CreateMount(ctx context.Context, space spaces.Space, revision string) (mounts.Mount, error)
+	// CreateWorkspace 创建工作空间
+	CreateWorkspace(ctx context.Context, path string) (workspaces.Workspace, error)
+	// GetWorkspaceFromPath 从指定目录获取对应工作空间
+	GetWorkspaceFromPath(ctx context.Context, path string) (workspaces.Workspace, error)
+	// RemoveWorkspaceMount 删除工作空间挂载
+	RemoveWorkspaceMount(ctx context.Context, ws workspaces.Workspace) error
+	// Commit 提交工作空间变更
+	Commit(ctx context.Context, ws workspaces.Workspace) (workspaces.Workspace, error)
 }
 
 // Options 管理器选项

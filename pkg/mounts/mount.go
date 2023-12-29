@@ -9,6 +9,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/yhlooo/stackcrisp/pkg/layers"
+	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 )
 
 const (
@@ -28,7 +29,7 @@ type MountOptions struct {
 // New 创建一个挂载
 //
 // layers 中第 0 到 n-2 个元素是 lower 层，其中 n-2 层是最顶层。第 n-1 层是 upper 层。
-func New(ctx context.Context, layers []layers.Layer, opts MountOptions) (Mount, error) {
+func New(ctx context.Context, id uid.UID, layers []layers.Layer, opts MountOptions) (Mount, error) {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 
 	// 最少需要两层，一层 lower 一层 upper
@@ -57,14 +58,31 @@ func New(ctx context.Context, layers []layers.Layer, opts MountOptions) (Mount, 
 
 	logger.V(1).Info(fmt.Sprintf("overlay mount options: %#v", ovlOpts))
 	return &defaultMount{
-		ovlOpts:  ovlOpts,
-		chownUID: opts.ChownUID,
-		chownGID: opts.ChownGID,
+		mountedMount: mountedMount{
+			id:        id,
+			mountPath: mountPath,
+			chownUID:  opts.ChownUID,
+			chownGID:  opts.ChownGID,
+		},
+		ovlOpts: ovlOpts,
 	}, nil
+}
+
+// NewMountedMount 创建一个已经挂载的挂载
+func NewMountedMount(id uid.UID, opts MountOptions) Mount {
+	mountPath := filepath.Join(opts.MountDataRoot, mountDataSubPathMountPath)
+	return &mountedMount{
+		id:        id,
+		mountPath: mountPath,
+		chownUID:  opts.ChownUID,
+		chownGID:  opts.ChownGID,
+	}
 }
 
 // Mount 挂载
 type Mount interface {
+	// ID 返回挂载 ID
+	ID() uid.UID
 	// MountPath 返回挂载点绝对路径
 	MountPath() string
 	// Mount 挂载
@@ -77,23 +95,42 @@ type Mount interface {
 
 // defaultMount 是 Mount 的一个默认实现
 type defaultMount struct {
-	ovlOpts  OverlayMountOptions
-	chownUID int
-	chownGID int
+	mountedMount
+	ovlOpts OverlayMountOptions
 }
 
 var _ Mount = &defaultMount{}
 
+// mountedMount 是 Mount 的一个实现，但是已经挂载不能再挂载
+type mountedMount struct {
+	id        uid.UID
+	mountPath string
+	chownUID  int
+	chownGID  int
+}
+
+var _ Mount = &mountedMount{}
+
+// ID 返回挂载 ID
+func (m *mountedMount) ID() uid.UID {
+	return m.id
+}
+
+// Mount 挂载
+func (m *mountedMount) Mount(context.Context) error {
+	return fmt.Errorf("already mount")
+}
+
 // MountPath 返回挂载点绝对路径
-func (m *defaultMount) MountPath() string {
-	return m.ovlOpts.MountPath
+func (m *mountedMount) MountPath() string {
+	return m.mountPath
 }
 
 // CreateSymlink 在指定路径创建访问挂载点的软链
-func (m *defaultMount) CreateSymlink(ctx context.Context, path string) error {
+func (m *mountedMount) CreateSymlink(ctx context.Context, path string) error {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
-	logger.V(1).Info(fmt.Sprintf("ln -s %q %q", m.ovlOpts.MountPath, path))
-	if err := os.Symlink(m.ovlOpts.MountPath, path); err != nil {
+	logger.V(1).Info(fmt.Sprintf("ln -s %q %q", m.MountPath(), path))
+	if err := os.Symlink(m.MountPath(), path); err != nil {
 		return err
 	}
 	if err := os.Lchown(path, m.chownUID, m.chownGID); err != nil {

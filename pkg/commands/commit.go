@@ -2,24 +2,22 @@ package commands
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
 	"github.com/yhlooo/stackcrisp/pkg/manager"
-	fsutil "github.com/yhlooo/stackcrisp/pkg/utils/fs"
 	logutil "github.com/yhlooo/stackcrisp/pkg/utils/log"
 	"github.com/yhlooo/stackcrisp/pkg/utils/sudo"
 )
 
-// NewInitCommandWithOptions 创建一个基于选项的 init 命令
-func NewInitCommandWithOptions(_ options.InitOptions, globalOptions options.GlobalOptionsGetter) *cobra.Command {
+// NewCommitCommandWithOptions 创建一个基于选项的 commit 命令
+func NewCommitCommandWithOptions(opts options.CommitOptions, globalOptions options.GlobalOptionsGetter) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "init [PATH]",
-		Short: "Create an empty Space or reinitialize an existing one.",
-		Args:  cobra.MaximumNArgs(1),
+		Use:   "commit",
+		Short: "Record changes to the space.",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
@@ -29,21 +27,6 @@ func NewInitCommandWithOptions(_ options.InitOptions, globalOptions options.Glob
 			if !sudo.IsRoot() {
 				logger.Info("switch to root")
 				return sudo.RunAsRoot(ctx, sudoExtraArgs()...)
-			}
-
-			target := "."
-			if len(args) > 0 {
-				target = args[0]
-			}
-			targetAbsPath, err := filepath.Abs(target)
-			if err != nil {
-				return fmt.Errorf("get absolute path of %q error: %w", target, err)
-			}
-			logger.V(1).Info(fmt.Sprintf("target path: %q", targetAbsPath))
-
-			// 确保目标路径上不是一个非空目录或文件
-			if fsutil.IsExists(targetAbsPath) && !fsutil.IsEmptyDir(targetAbsPath) {
-				return fmt.Errorf("path %q is not an empty dir", targetAbsPath)
 			}
 
 			// 创建管理器
@@ -59,21 +42,37 @@ func NewInitCommandWithOptions(_ options.InitOptions, globalOptions options.Glob
 			if err := mgr.Prepare(ctx); err != nil {
 				return fmt.Errorf("prepare manager error: %w", err)
 			}
-			// 创建 workspace
-			logger.Info("creating workspace ...")
-			ws, err := mgr.CreateWorkspace(ctx, targetAbsPath)
+
+			// 找到当前目录对应 workspace
+			ws, err := mgr.GetWorkspaceFromPath(ctx, ".")
 			if err != nil {
-				return fmt.Errorf("create workspacespace error: %w", err)
+				return fmt.Errorf("get workspace from path \".\" error: %w", err)
+			}
+
+			// commit
+			newWS, err := mgr.Commit(ctx, ws)
+			if err != nil {
+				return fmt.Errorf("commit error: %w", err)
 			}
 
 			// 展开 workspace
 			logger.Info("expanding workspace ...")
-			if err := ws.Expand(ctx); err != nil {
+			if err := newWS.Expand(ctx); err != nil {
 				return fmt.Errorf("expand workspace error: %w", err)
+			}
+
+			// 回收旧的 workspace
+			logger.Info("removing old workspace mount ...")
+			if err := mgr.RemoveWorkspaceMount(ctx, ws); err != nil {
+				return fmt.Errorf("remove old workspace mount error: %w", err)
 			}
 
 			return nil
 		},
 	}
+
+	// 绑定选项到命令行参数
+	opts.AddPFlags(cmd.Flags())
+
 	return cmd
 }

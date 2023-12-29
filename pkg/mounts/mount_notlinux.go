@@ -14,6 +14,6 @@ func (m *defaultMount) Mount(context.Context) error {
 }
 
 // Umount 卸载挂载
-func (m *defaultMount) Umount(context.Context) error {
+func (m *mountedMount) Umount(context.Context) error {
 	return fmt.Errorf("umount is not supported on %s", runtime.GOOS)
 }

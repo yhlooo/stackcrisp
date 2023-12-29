@@ -44,7 +44,7 @@ func (m *defaultMount) Mount(ctx context.Context) error {
 }
 
 // Umount 卸载挂载
-func (m *defaultMount) Umount(ctx context.Context) error {
+func (m *mountedMount) Umount(ctx context.Context) error {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 	logger.V(1).Info(fmt.Sprintf("umount %q", m.MountPath()))
 	return syscall.Unmount(m.MountPath(), 0)

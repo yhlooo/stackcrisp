@@ -14,6 +14,7 @@ import (
 	"github.com/yhlooo/stackcrisp/pkg/layers"
 	"github.com/yhlooo/stackcrisp/pkg/mounts"
 	"github.com/yhlooo/stackcrisp/pkg/spaces/trees"
+	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 )
 
 const (
@@ -25,8 +26,9 @@ const (
 )
 
 // New 创建一个 Space
-func New(spaceDataRoot string, layerManager layers.LayerManager) Space {
+func New(id uid.UID, spaceDataRoot string, layerManager layers.LayerManager) Space {
 	return &defaultSpace{
+		id:            id,
 		spaceDataRoot: spaceDataRoot,
 		layerManger:   layerManager,
 	}
@@ -34,6 +36,7 @@ func New(spaceDataRoot string, layerManager layers.LayerManager) Space {
 
 // defaultSpace 是 Space 的一个默认实现
 type defaultSpace struct {
+	id            uid.UID
 	spaceDataRoot string
 
 	layerTree   trees.Tree
@@ -41,6 +44,11 @@ type defaultSpace struct {
 }
 
 var _ Space = &defaultSpace{}
+
+// ID 返回空间 ID
+func (space *defaultSpace) ID() uid.UID {
+	return space.id
+}
 
 // Init 初始化
 func (space *defaultSpace) Init(ctx context.Context) error {
@@ -114,24 +122,25 @@ func (space *defaultSpace) Save(ctx context.Context) error {
 func (space *defaultSpace) CreateMount(
 	ctx context.Context,
 	revision string,
+	mountID uid.UID,
 	mountOpts mounts.MountOptions,
-) (mounts.Mount, error) {
+) (mounts.Mount, uid.UID, error) {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 
 	// 找到 lower 的最上层节点
 	lowerNode, ok := space.layerTree.Search(revision)
 	if !ok {
-		return nil, fmt.Errorf("layer %q not found", revision)
+		return nil, nil, fmt.Errorf("layer %q not found", revision)
 	}
 	// 创建一个作为 upper 层的节点
 	logger.Info("creating upper layer ...")
 	upper, err := space.layerManger.Create(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("create upper layer error: %w", err)
+		return nil, nil, fmt.Errorf("create upper layer error: %w", err)
 	}
 	logger.V(1).Info(fmt.Sprintf("add upper layer %s to tree", upper.ID()))
 	if err := space.layerTree.AddNode(lowerNode.ID(), trees.NewNode(upper.ID())); err != nil {
-		return nil, fmt.Errorf("add upper layer to tree error: %w", err)
+		return nil, nil, fmt.Errorf("add upper layer to tree error: %w", err)
 	}
 	// 找到所有 lower 层
 	var layerSet []layers.Layer
@@ -139,7 +148,7 @@ func (space *defaultSpace) CreateMount(
 	for cur != nil {
 		layer, err := space.layerManger.Get(ctx, cur.ID())
 		if err != nil {
-			return nil, fmt.Errorf("get layer %q error: %w", cur.ID(), err)
+			return nil, nil, fmt.Errorf("get layer %q error: %w", cur.ID(), err)
 		}
 		layerSet = append(layerSet, layer)
 		cur = cur.Parent()
@@ -149,7 +158,8 @@ func (space *defaultSpace) CreateMount(
 	layerSet = append(layerSet, upper)
 
 	logger.V(1).Info(fmt.Sprintf("mount layers: %v", layerSet))
-	return mounts.New(ctx, layerSet, mountOpts)
+	mount, err := mounts.New(ctx, mountID, layerSet, mountOpts)
+	return mount, upper.ID(), err
 }
 
 // treeDumpSavePath 返回导出的树存储路径

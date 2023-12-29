@@ -41,14 +41,11 @@ func Dump(tree Tree) TreeDump {
 			ID: root.ID().Hex(),
 		}
 		nodes := map[*NodeDump]map[string]Node{
-			nil: {root.ID().Hex(): root},
+			dump.Nodes: root.Children(),
 		}
 		for len(nodes) > 0 {
 			newNodes := map[*NodeDump]map[string]Node{}
 			for parent, children := range nodes {
-				if parent == nil {
-					parent = dump.Nodes
-				}
 				if len(children) == 0 {
 					continue
 				}

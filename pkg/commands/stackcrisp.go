@@ -45,6 +45,8 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 					return fmt.Errorf("change working directory to %q error: %w", opts.Global.Chdir, err)
 				}
 			}
+
+			logger.V(1).Info(fmt.Sprintf("command: %q, args: %#v", cmd.Name(), args))
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -58,6 +60,7 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 	// 添加子命令
 	cmd.AddCommand(
 		NewInitCommandWithOptions(opts.Init, &opts.Global),
+		NewCommitCommandWithOptions(opts.Commit, &opts.Global),
 	)
 
 	return cmd
