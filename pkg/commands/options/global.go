@@ -10,6 +10,7 @@ import (
 func NewDefaultGlobalOptions() GlobalOptions {
 	return GlobalOptions{
 		Verbosity: 0,
+		Chdir:     "",
 		DataRoot:  "/var/lib/stackcrisp",
 		UID:       -1,
 		GID:       -1,
@@ -20,6 +21,8 @@ func NewDefaultGlobalOptions() GlobalOptions {
 type GlobalOptions struct {
 	// 日志数量级别（ 0 / 1 / 2 ）
 	Verbosity uint32 `json:"verbosity" yaml:"verbosity"`
+	// 改变工作目录
+	Chdir string `json:"chdir,omitempty" yaml:"chdir,omitempty"`
 	// 数据存储根目录
 	DataRoot string `json:"dataRoot" yaml:"dataRoot"`
 	// 执行命令的原始用户 ID
@@ -39,6 +42,8 @@ func (o *GlobalOptions) Validate() error {
 // AddPFlags 将选项绑定到命令行参数
 func (o *GlobalOptions) AddPFlags(flags *pflag.FlagSet) {
 	flags.Uint32VarP(&o.Verbosity, "verbose", "v", o.Verbosity, "Number for the log level verbosity (0, 1, or 2)")
+	flags.StringVarP(&o.Chdir, "chdir", "C", o.Chdir, "Change to directory before doing anything")
+
 	flags.StringVar(&o.DataRoot, "data-root", o.DataRoot, "Root directory of persistent data")
 	flags.IntVar(&o.UID, "uid", o.UID, "The uid of the user who executed the original command")
 	flags.IntVar(&o.GID, "gid", o.GID, "The uid of the user who executed the original command")

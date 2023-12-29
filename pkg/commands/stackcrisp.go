@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/bombsimon/logrusr/v4"
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
@@ -36,6 +39,12 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 			// 将 logger 注入上下文
 			logger := logrusr.New(logrusLogger)
 			cmd.SetContext(logr.NewContext(cmd.Context(), logger))
+			// 设置工作目录
+			if opts.Global.Chdir != "" {
+				if err := os.Chdir(opts.Global.Chdir); err != nil {
+					return fmt.Errorf("change working directory to %q error: %w", opts.Global.Chdir, err)
+				}
+			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
