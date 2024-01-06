@@ -13,8 +13,9 @@ import (
 // NewCommitCommandWithOptions 创建一个基于选项的 commit 命令
 func NewCommitCommandWithOptions(opts options.CommitOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "commit",
-		Short: "Record changes to the space.",
+		Use:     "commit",
+		Short:   "Record changes to the space",
+		GroupID: groupWork,
 		Annotations: map[string]string{
 			cmdutil.AnnotationRunAsRoot:      cmdutil.AnnotationValueTrue,
 			cmdutil.AnnotationRequireManager: cmdutil.AnnotationValueTrue,

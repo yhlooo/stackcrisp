@@ -11,6 +11,10 @@ import (
 
 const (
 	loggerName = "commands"
+
+	groupStart = "start"
+	groupWork  = "work"
+	groupState = "state"
 )
 
 // NewStackCrispCommandWithOptions 创建一个基于选项的 stackcrisp 命令
@@ -49,6 +53,13 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 
 	// 绑定选项到命令行参数
 	opts.Global.AddPFlags(cmd.PersistentFlags())
+
+	// 添加命令组
+	cmd.AddGroup(
+		&cobra.Group{ID: groupStart, Title: "Start a working area"},
+		&cobra.Group{ID: groupWork, Title: "Grow, mark and tweak your common history"},
+		&cobra.Group{ID: groupState, Title: "Examine the history and state"},
+	)
 
 	// 添加子命令
 	cmd.AddCommand(

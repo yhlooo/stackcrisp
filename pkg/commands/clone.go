@@ -11,8 +11,9 @@ import (
 // NewCloneCommandWithOptions 创建一个基于选项的 clone 命令
 func NewCloneCommandWithOptions(_ options.CloneOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "clone <workspace> [<directory>]",
-		Short: "Clone a workspace into a new directory.",
+		Use:     "clone <workspace> [<directory>]",
+		Short:   "Clone a workspace into a new directory",
+		GroupID: groupStart,
 		Annotations: map[string]string{
 			cmdutil.AnnotationRunAsRoot:      cmdutil.AnnotationValueTrue,
 			cmdutil.AnnotationRequireManager: cmdutil.AnnotationValueTrue,

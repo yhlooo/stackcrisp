@@ -15,8 +15,9 @@ import (
 // NewInitCommandWithOptions 创建一个基于选项的 init 命令
 func NewInitCommandWithOptions(_ options.InitOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "init [<directory>]",
-		Short: "Create an empty Space or reinitialize an existing one.",
+		Use:     "init [<directory>]",
+		Short:   "Create an empty Space or reinitialize an existing one",
+		GroupID: groupStart,
 		Annotations: map[string]string{
 			cmdutil.AnnotationRunAsRoot:      cmdutil.AnnotationValueTrue,
 			cmdutil.AnnotationRequireManager: cmdutil.AnnotationValueTrue,
