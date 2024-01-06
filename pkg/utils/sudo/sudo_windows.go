@@ -2,7 +2,11 @@
 
 package sudo
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"runtime"
+)
 
 // IsRoot 返回是否 root 用户
 // TODO: 暂未实现
