@@ -34,6 +34,10 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 			if err := cmdutil.ChangeWorkingDirectory(cmd, opts.Global.Chdir); err != nil {
 				return err
 			}
+			// 创建并注入 manager
+			if err := cmdutil.InjectManagerIfNecessary(cmd, &opts.Global); err != nil {
+				return err
+			}
 
 			logger.V(1).Info(fmt.Sprintf("command: %q, args: %#v", cmd.Name(), args))
 			return nil
@@ -48,8 +52,9 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 
 	// 添加子命令
 	cmd.AddCommand(
-		NewInitCommandWithOptions(opts.Init, &opts.Global),
-		NewCommitCommandWithOptions(opts.Commit, &opts.Global),
+		NewInitCommandWithOptions(opts.Init),
+		NewCloneCommandWithOptions(opts.Clone),
+		NewCommitCommandWithOptions(opts.Commit),
 	)
 
 	return cmd

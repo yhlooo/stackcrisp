@@ -8,18 +8,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
-	"github.com/yhlooo/stackcrisp/pkg/manager"
 	cmdutil "github.com/yhlooo/stackcrisp/pkg/utils/cmd"
 	fsutil "github.com/yhlooo/stackcrisp/pkg/utils/fs"
 )
 
 // NewInitCommandWithOptions 创建一个基于选项的 init 命令
-func NewInitCommandWithOptions(_ options.InitOptions, globalOptions options.GlobalOptionsGetter) *cobra.Command {
+func NewInitCommandWithOptions(_ options.InitOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "init [PATH]",
+		Use:   "init [<directory>]",
 		Short: "Create an empty Space or reinitialize an existing one.",
 		Annotations: map[string]string{
-			cmdutil.AnnotationRunAsRoot: cmdutil.AnnotationValueTrue,
+			cmdutil.AnnotationRunAsRoot:      cmdutil.AnnotationValueTrue,
+			cmdutil.AnnotationRequireManager: cmdutil.AnnotationValueTrue,
 		},
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -41,19 +41,8 @@ func NewInitCommandWithOptions(_ options.InitOptions, globalOptions options.Glob
 				return fmt.Errorf("path %q is not an empty dir", targetAbsPath)
 			}
 
-			// 创建管理器
-			logger.V(1).Info(fmt.Sprintf("new manager, dataRoot: %q", globalOptions.GetDataRoot()))
-			mgr, err := manager.New(manager.Options{
-				DataRoot: globalOptions.GetDataRoot(),
-				ChownUID: globalOptions.GetUID(),
-				ChownGID: globalOptions.GetGID(),
-			})
-			if err != nil {
-				return fmt.Errorf("create manager error: %w", err)
-			}
-			if err := mgr.Prepare(ctx); err != nil {
-				return fmt.Errorf("prepare manager error: %w", err)
-			}
+			// 获取管理器
+			mgr := cmdutil.ManagerFromContext(ctx)
 			// 创建 workspace
 			logger.Info("creating workspace ...")
 			ws, err := mgr.CreateWorkspace(ctx, targetAbsPath)

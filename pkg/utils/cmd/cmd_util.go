@@ -11,11 +11,17 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/yhlooo/stackcrisp/pkg/commands/options"
+	"github.com/yhlooo/stackcrisp/pkg/manager"
 	logutil "github.com/yhlooo/stackcrisp/pkg/utils/log"
 	"github.com/yhlooo/stackcrisp/pkg/utils/sudo"
 )
 
-// SetLogger 设置命令日志，并返回 logger
+const (
+	loggerName = "utils.cmd"
+)
+
+// SetLogger 设置命令日志，并返回 logr.Logger
 func SetLogger(cmd *cobra.Command, verbosity uint32) logr.Logger {
 	// 设置日志级别
 	logrusLogger := logrus.New()
@@ -36,7 +42,7 @@ func SetLogger(cmd *cobra.Command, verbosity uint32) logr.Logger {
 
 // SwitchToRootIfNecessary 如果需要的话切换到 root 用户运行
 func SwitchToRootIfNecessary(cmd *cobra.Command) (bool, error) {
-	logger := logr.FromContextOrDiscard(cmd.Context())
+	logger := logr.FromContextOrDiscard(cmd.Context()).WithName(loggerName)
 	logutil.UserInfo(logger.V(1))
 	if cmd.Annotations[AnnotationRunAsRoot] == AnnotationValueTrue && !sudo.IsRoot() {
 		return true, runAsRoot(cmd)
@@ -46,7 +52,7 @@ func SwitchToRootIfNecessary(cmd *cobra.Command) (bool, error) {
 
 // runAsRoot 设置使用 root 用户运行
 func runAsRoot(cmd *cobra.Command) error {
-	logger := logr.FromContextOrDiscard(cmd.Context())
+	logger := logr.FromContextOrDiscard(cmd.Context()).WithName(loggerName)
 
 	logger.Info("switch to root")
 	cmd.Run = nil
@@ -91,6 +97,34 @@ func ChangeWorkingDirectory(cmd *cobra.Command, path string) error {
 	if err := os.Setenv("PWD", absPath); err != nil {
 		return fmt.Errorf("set env PWD to %q error: %w", absPath, err)
 	}
+
+	return nil
+}
+
+// InjectManagerIfNecessary 如果需要的话注入 manager.Manager
+func InjectManagerIfNecessary(cmd *cobra.Command, globalOptions options.GlobalOptionsGetter) error {
+	if cmd.Annotations[AnnotationRequireManager] != AnnotationValueTrue {
+		return nil
+	}
+
+	logger := logr.FromContextOrDiscard(cmd.Context()).WithName(loggerName)
+
+	// 创建管理器
+	logger.V(1).Info(fmt.Sprintf("new manager, dataRoot: %q", globalOptions.GetDataRoot()))
+	mgr, err := manager.New(manager.Options{
+		DataRoot: globalOptions.GetDataRoot(),
+		ChownUID: globalOptions.GetUID(),
+		ChownGID: globalOptions.GetGID(),
+	})
+	if err != nil {
+		return fmt.Errorf("create manager error: %w", err)
+	}
+	if err := mgr.Prepare(cmd.Context()); err != nil {
+		return fmt.Errorf("prepare manager error: %w", err)
+	}
+
+	// 注入到上下文
+	cmd.SetContext(NewContextWithManager(cmd.Context(), mgr))
 
 	return nil
 }

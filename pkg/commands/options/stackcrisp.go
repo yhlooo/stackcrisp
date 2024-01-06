@@ -5,6 +5,7 @@ func NewDefaultOptions() Options {
 	return Options{
 		Global: NewDefaultGlobalOptions(),
 		Init:   NewDefaultInitOptions(),
+		Clone:  NewDefaultCloneOptions(),
 		Commit: NewDefaultCommitOptions(),
 	}
 }
@@ -15,6 +16,8 @@ type Options struct {
 	Global GlobalOptions `json:"global,omitempty" yaml:"global,omitempty"`
 	// init 命令选项
 	Init InitOptions `json:"init,omitempty" yaml:"init,omitempty"`
+	// clone 命令选项
+	Clone CloneOptions `json:"clone,omitempty" yaml:"clone,omitempty"`
 	// commit 命令选项
 	Commit CommitOptions `json:"commit,omitempty" yaml:"commit,omitempty"`
 }
