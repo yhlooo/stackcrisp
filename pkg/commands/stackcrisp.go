@@ -43,7 +43,7 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 				return err
 			}
 
-			logger.V(1).Info(fmt.Sprintf("command: %q, args: %#v", cmd.Name(), args))
+			logger.V(1).Info(fmt.Sprintf("command: %q, args: %#v, options: %#v", cmd.Name(), args, opts))
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -63,9 +63,10 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 
 	// 添加子命令
 	cmd.AddCommand(
-		NewInitCommandWithOptions(opts.Init),
-		NewCloneCommandWithOptions(opts.Clone),
-		NewCommitCommandWithOptions(opts.Commit),
+		NewInitCommandWithOptions(&opts.Init),
+		NewCloneCommandWithOptions(&opts.Clone),
+		NewCommitCommandWithOptions(&opts.Commit),
+		NewCheckoutCommandWithOptions(&opts.Checkout),
 	)
 
 	return cmd

@@ -12,7 +12,7 @@ import (
 )
 
 // NewCloneCommandWithOptions 创建一个基于选项的 clone 命令
-func NewCloneCommandWithOptions(_ options.CloneOptions) *cobra.Command {
+func NewCloneCommandWithOptions(_ *options.CloneOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "clone <workspace> [<directory>]",
 		Short:   "Clone a workspace into a new directory",

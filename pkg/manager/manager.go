@@ -20,6 +20,8 @@ type Manager interface {
 	Clone(ctx context.Context, ws workspaces.Workspace, targetPath string) (workspaces.Workspace, error)
 	// Commit 提交工作空间变更
 	Commit(ctx context.Context, ws workspaces.Workspace) (workspaces.Workspace, error)
+	// Checkout 切换工作空间所处树的位置
+	Checkout(ctx context.Context, ws workspaces.Workspace, revision string) (workspaces.Workspace, error)
 }
 
 // Options 管理器选项

@@ -296,6 +296,39 @@ func (mgr *defaultManager) Commit(ctx context.Context, ws workspaces.Workspace) 
 	return newWS, nil
 }
 
+// Checkout 切换工作空间所处树的位置
+func (mgr *defaultManager) Checkout(
+	ctx context.Context,
+	ws workspaces.Workspace,
+	revision string,
+) (workspaces.Workspace, error) {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
+	// 获取 space
+	space := ws.Space()
+
+	// 基于指定 revision
+	mount, head, err := mgr.createMount(ctx, space, revision)
+	if err != nil {
+		return nil, fmt.Errorf("create mount error: %w", err)
+	}
+	logger.Info(fmt.Sprintf("forward to new head %q", ws.Head().Hex()))
+
+	newWS := workspaces.New(ws.Path(), head, space, mount)
+
+	// 记录空间信息
+	logger.Info(fmt.Sprintf("saving space %s ...", space.ID()))
+	if err := space.Save(ctx); err != nil {
+		return nil, fmt.Errorf("save space error: %w", err)
+	}
+	// 记录工作空间信息
+	if err := mgr.saveWorkspaceInfo(ctx, newWS); err != nil {
+		return nil, fmt.Errorf("save workspace info error: %w", err)
+	}
+
+	return newWS, nil
+}
+
 // Clone 克隆工作空间
 func (mgr *defaultManager) Clone(
 	ctx context.Context,
@@ -333,7 +366,6 @@ func (mgr *defaultManager) Clone(
 	}
 
 	return newWS, nil
-
 }
 
 // saveWorkspaceInfo 保存工作空间信息

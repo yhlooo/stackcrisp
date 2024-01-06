@@ -10,20 +10,23 @@ import (
 	cmdutil "github.com/yhlooo/stackcrisp/pkg/utils/cmd"
 )
 
-// NewCommitCommandWithOptions 创建一个基于选项的 commit 命令
-func NewCommitCommandWithOptions(opts *options.CommitOptions) *cobra.Command {
+// NewCheckoutCommandWithOptions 创建一个基于选项的 checkout 命令
+func NewCheckoutCommandWithOptions(_ *options.CheckoutOptions) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "commit",
-		Short:   "Record changes to the space",
+		Use:     "checkout <commit>",
+		Short:   "Switch branches and restore working tree files",
 		GroupID: groupWork,
 		Annotations: map[string]string{
 			cmdutil.AnnotationRunAsRoot:      cmdutil.AnnotationValueTrue,
 			cmdutil.AnnotationRequireManager: cmdutil.AnnotationValueTrue,
 		},
-		Args: cobra.NoArgs,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
+			targetCommit := args[0]
+			logger.V(1).Info(fmt.Sprintf("target commit: %q", targetCommit))
 
 			// 获取管理器
 			mgr := cmdutil.ManagerFromContext(ctx)
@@ -34,8 +37,8 @@ func NewCommitCommandWithOptions(opts *options.CommitOptions) *cobra.Command {
 				return fmt.Errorf("get workspace from path \".\" error: %w", err)
 			}
 
-			// commit
-			newWS, err := mgr.Commit(ctx, ws)
+			// checkout
+			newWS, err := mgr.Checkout(ctx, ws, targetCommit)
 			if err != nil {
 				return fmt.Errorf("commit error: %w", err)
 			}
@@ -51,13 +54,8 @@ func NewCommitCommandWithOptions(opts *options.CommitOptions) *cobra.Command {
 			if err := mgr.RemoveWorkspaceMount(ctx, ws); err != nil {
 				return fmt.Errorf("remove old workspace mount error: %w", err)
 			}
-
 			return nil
 		},
 	}
-
-	// 绑定选项到命令行参数
-	opts.AddPFlags(cmd.Flags())
-
 	return cmd
 }

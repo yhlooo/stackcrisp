@@ -3,10 +3,11 @@ package options
 // NewDefaultOptions 创建一个默认运行选项
 func NewDefaultOptions() Options {
 	return Options{
-		Global: NewDefaultGlobalOptions(),
-		Init:   NewDefaultInitOptions(),
-		Clone:  NewDefaultCloneOptions(),
-		Commit: NewDefaultCommitOptions(),
+		Global:   NewDefaultGlobalOptions(),
+		Init:     NewDefaultInitOptions(),
+		Clone:    NewDefaultCloneOptions(),
+		Commit:   NewDefaultCommitOptions(),
+		Checkout: NewDefaultCheckoutOptions(),
 	}
 }
 
@@ -20,4 +21,6 @@ type Options struct {
 	Clone CloneOptions `json:"clone,omitempty" yaml:"clone,omitempty"`
 	// commit 命令选项
 	Commit CommitOptions `json:"commit,omitempty" yaml:"commit,omitempty"`
+	// checkout 命令选项
+	Checkout CheckoutOptions `json:"checkout,omitempty" yaml:"checkout,omitempty"`
 }
