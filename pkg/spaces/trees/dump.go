@@ -22,6 +22,10 @@ type NodeDump struct {
 	ID string `json:"id"`
 	// 子节点
 	Children []NodeDump `json:"children,omitempty"`
+	// 注解
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// 数据
+	Data map[string][]byte `json:"data,omitempty"`
 }
 
 // Dump 导出树
@@ -38,7 +42,9 @@ func Dump(tree Tree) TreeDump {
 	// 导出节点
 	if root != nil {
 		dump.Nodes = &NodeDump{
-			ID: root.ID().Hex(),
+			ID:          root.ID().Hex(),
+			Annotations: root.Annotations(),
+			Data:        root.Data(),
 		}
 		nodes := map[*NodeDump]map[string]Node{
 			dump.Nodes: root.Children(),
@@ -53,6 +59,9 @@ func Dump(tree Tree) TreeDump {
 				parent.Children = make([]NodeDump, len(children))
 				for _, n := range children {
 					parent.Children[i].ID = n.ID().Hex()
+					parent.Children[i].Annotations = n.Annotations()
+					parent.Children[i].Data = n.Data()
+
 					newNodes[&parent.Children[i]] = n.Children()
 					i++
 				}
@@ -90,7 +99,11 @@ func Load(dump TreeDump) (Tree, error) {
 	if err != nil {
 		return tree, fmt.Errorf("decode id %q of the root node error: %w", dump.Nodes.ID, err)
 	}
-	if err := tree.AddNode(nil, NewNode(rootID)); err != nil {
+
+	node := NewNode(rootID)
+	node.SetAnnotations(dump.Nodes.Annotations)
+	node.SetData(dump.Nodes.Data)
+	if err := tree.AddNode(nil, node); err != nil {
 		return tree, fmt.Errorf("add root node %q error: %w", rootID, err)
 	}
 	nodes := []NodeDump{*dump.Nodes}
@@ -106,7 +119,11 @@ func Load(dump TreeDump) (Tree, error) {
 			if err != nil {
 				return tree, fmt.Errorf("decode id %q of the node error: %w", child.ID, err)
 			}
-			if err := tree.AddNode(parentID, NewNode(childID)); err != nil {
+			node := NewNode(childID)
+			node.SetAnnotations(child.Annotations)
+			node.SetData(child.Data)
+
+			if err := tree.AddNode(parentID, node); err != nil {
 				return nil, fmt.Errorf("add node %q as child of the node %q error: %w", childID, parentID, err)
 			}
 		}

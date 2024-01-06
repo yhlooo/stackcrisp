@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
+	"github.com/yhlooo/stackcrisp/pkg/manager"
 	cmdutil "github.com/yhlooo/stackcrisp/pkg/utils/cmd"
 )
 
@@ -35,7 +36,7 @@ func NewCommitCommandWithOptions(opts *options.CommitOptions) *cobra.Command {
 			}
 
 			// commit
-			newWS, err := mgr.Commit(ctx, ws)
+			newWS, err := mgr.Commit(ctx, ws, manager.Commit{Message: opts.Message})
 			if err != nil {
 				return fmt.Errorf("commit error: %w", err)
 			}

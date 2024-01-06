@@ -2,6 +2,8 @@ package commands
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
@@ -46,7 +48,15 @@ func NewLogCommandWithOptions(_ *options.LogOptions) *cobra.Command {
 
 			// 打印
 			for _, c := range commits {
-				fmt.Printf("commit %s\n", c.ID.Hex())
+				fmt.Printf("\033[33mcommit %s\033[0m\n", c.ID.Hex())
+				if c.Date != nil {
+					fmt.Printf("Date:  %s\n", c.Date.Format(time.ANSIC+" -0700"))
+				}
+				if c.Message != "" {
+					fmt.Println()
+					fmt.Println("    " + strings.ReplaceAll(strings.TrimRight(c.Message, "\r\n "), "\n", "\n    "))
+					fmt.Println()
+				}
 			}
 
 			return nil

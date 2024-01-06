@@ -30,6 +30,19 @@ type Node interface {
 	// DeleteChild 删除子节点
 	// 删除成功则返回 true 、不存在则返回 false
 	DeleteChild(childID uid.UID) bool
+
+	// Annotations 返回节点注解的副本
+	Annotations() map[string]string
+	// AddAnnotation 添加注解
+	AddAnnotation(key, value string)
+	// SetAnnotations 设置注解
+	SetAnnotations(anno map[string]string)
+	// Data 返回节点存储数据的副本
+	Data() map[string][]byte
+	// AddData 添加数据
+	AddData(key string, value []byte)
+	// SetData 设置数据
+	SetData(data map[string][]byte)
 }
 
 // NewNode 创建一个 Node
@@ -43,6 +56,11 @@ type defaultNode struct {
 	parent       Node
 	children     map[string]Node
 	childrenLock sync.RWMutex
+
+	annoLock    sync.RWMutex
+	annotations map[string]string
+	dataLock    sync.RWMutex
+	data        map[string][]byte
 }
 
 var _ Node = &defaultNode{}
@@ -140,4 +158,78 @@ func (node *defaultNode) DeleteChild(childID uid.UID) bool {
 	delete(node.children, childID.Hex())
 
 	return true
+}
+
+// Annotations 返回节点注解的副本
+func (node *defaultNode) Annotations() map[string]string {
+	if node == nil || node.annotations == nil {
+		return nil
+	}
+	node.annoLock.RLock()
+	defer node.annoLock.RUnlock()
+	anno := make(map[string]string, len(node.annotations))
+	for k, v := range node.annotations {
+		anno[k] = v
+	}
+	return anno
+}
+
+// AddAnnotation 添加注解
+func (node *defaultNode) AddAnnotation(key, value string) {
+	node.annoLock.Lock()
+	defer node.annoLock.Unlock()
+	if node.annotations == nil {
+		node.annotations = make(map[string]string)
+	}
+	node.annotations[key] = value
+}
+
+// SetAnnotations 设置注解
+func (node *defaultNode) SetAnnotations(anno map[string]string) {
+	node.annoLock.Lock()
+	defer node.annoLock.Unlock()
+	node.annotations = anno
+}
+
+// Data 返回节点存储数据的副本
+func (node *defaultNode) Data() map[string][]byte {
+	if node == nil || node.data == nil {
+		return nil
+	}
+	node.dataLock.RLock()
+	defer node.dataLock.RUnlock()
+	data := make(map[string][]byte, len(node.data))
+	for k, v := range node.data {
+		if v == nil {
+			data[k] = nil
+			continue
+		}
+		vCopy := make([]byte, len(v))
+		copy(vCopy, v)
+		data[k] = vCopy
+	}
+	return data
+}
+
+// AddData 添加数据
+func (node *defaultNode) AddData(key string, value []byte) {
+	node.dataLock.Lock()
+	defer node.dataLock.Unlock()
+	if node.data == nil {
+		node.data = make(map[string][]byte)
+	}
+	if value == nil {
+		node.data[key] = nil
+		return
+	}
+	valueCopy := make([]byte, len(value))
+	copy(valueCopy, value)
+	node.data[key] = valueCopy
+}
+
+// SetData 设置数据
+func (node *defaultNode) SetData(data map[string][]byte) {
+	node.dataLock.Lock()
+	defer node.dataLock.Unlock()
+	node.data = data
 }

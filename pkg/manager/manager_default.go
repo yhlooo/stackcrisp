@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
 
@@ -269,14 +270,27 @@ func (mgr *defaultManager) RemoveWorkspaceMount(ctx context.Context, ws workspac
 }
 
 // Commit 提交工作空间变更
-func (mgr *defaultManager) Commit(ctx context.Context, ws workspaces.Workspace) (workspaces.Workspace, error) {
+func (mgr *defaultManager) Commit(ctx context.Context, ws workspaces.Workspace, info Commit) (workspaces.Workspace, error) {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
+	// 补充信息
+	if info.Date == nil {
+		now := time.Now()
+		info.Date = &now
+	}
 
 	// 获取 space
 	space := ws.Space()
 
+	// 记录 commit 信息
+	headNode, ok := space.Tree().Get(ws.Head())
+	if !ok {
+		return nil, fmt.Errorf("workspace head layer %q not found", ws.Head().Hex())
+	}
+	info.SetToNode(headNode)
+
 	// 基于当前头指针创新新挂载
-	mount, head, err := mgr.createMount(ctx, space, ws.Head().Hex())
+	mount, head, err := mgr.createMount(ctx, space, headNode.ID().Hex())
 	if err != nil {
 		return nil, fmt.Errorf("create mount error: %w", err)
 	}
@@ -395,10 +409,7 @@ func (mgr *defaultManager) GetHistory(
 	var commits []Commit
 	cur := node
 	for !cur.IsRoot() {
-		commits = append(commits, Commit{
-			ID:      cur.ID(),
-			Message: "",
-		})
+		commits = append(commits, GetCommitFromNode(cur))
 		cur = cur.Parent()
 	}
 

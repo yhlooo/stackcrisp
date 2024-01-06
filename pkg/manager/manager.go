@@ -3,7 +3,6 @@ package manager
 import (
 	"context"
 
-	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 	"github.com/yhlooo/stackcrisp/pkg/workspaces"
 )
 
@@ -20,7 +19,7 @@ type Manager interface {
 	// Clone 克隆工作空间
 	Clone(ctx context.Context, ws workspaces.Workspace, targetPath string) (workspaces.Workspace, error)
 	// Commit 提交工作空间变更
-	Commit(ctx context.Context, ws workspaces.Workspace) (workspaces.Workspace, error)
+	Commit(ctx context.Context, ws workspaces.Workspace, info Commit) (workspaces.Workspace, error)
 	// Checkout 切换工作空间所处树的位置
 	Checkout(ctx context.Context, ws workspaces.Workspace, revision string) (workspaces.Workspace, error)
 	// GetHistory 获取提交历史
@@ -35,10 +34,4 @@ type Options struct {
 	ChownUID int
 	// 修改空间中存储文件所属用户组 ID ， -1 表示不修改
 	ChownGID int
-}
-
-// Commit 提交信息
-type Commit struct {
-	ID      uid.UID
-	Message string
 }
