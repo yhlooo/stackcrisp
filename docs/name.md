@@ -1,5 +1,7 @@
 # 为什么是 `StackCrisp`
 
+为了给这个项目起个名字，我咨询了很多“专家”，包括 [OpenAI ChatGPT](https://chat.openai.com/) 、 [Google Bard](https://bard.google.com/chat) 、 [腾讯混元](https://hunyuan.tencent.com/) 。最终我采纳了 Google Bard 的意见，以下是我与其探讨的过程：
+
 **我:**
 
 > 我需要设计一个软件产品名。
