@@ -67,14 +67,6 @@ func (ws *defaultWorkspace) Expand(ctx context.Context) error {
 		return fmt.Errorf("mount error: %w", err)
 	}
 
-	// 确保目标路径上什么也没有
-	if fsutil.IsExists(ws.Path()) {
-		logger.V(1).Info(fmt.Sprintf("target path %q exists, remove it", ws.Path()))
-		if err := os.Remove(ws.Path()); err != nil {
-			return fmt.Errorf("clear path %q error: %w", ws.Path(), err)
-		}
-	}
-
 	// 先移动到根目录
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -82,6 +74,14 @@ func (ws *defaultWorkspace) Expand(ctx context.Context) error {
 	}
 	if err := os.Chdir("/"); err != nil {
 		return fmt.Errorf("change working directory to \"/\" error: %w", err)
+	}
+
+	// 确保目标路径上什么也没有
+	if fsutil.IsExists(ws.Path()) {
+		logger.V(1).Info(fmt.Sprintf("target path %q exists, remove it", ws.Path()))
+		if err := os.Remove(ws.Path()); err != nil {
+			return fmt.Errorf("clear path %q error: %w", ws.Path(), err)
+		}
 	}
 
 	// 创建软链

@@ -2,11 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/bombsimon/logrusr/v4"
-	"github.com/go-logr/logr"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
@@ -19,31 +15,23 @@ const (
 // NewStackCrispCommandWithOptions 创建一个基于选项的 stackcrisp 命令
 func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "stackcrisp",
-		Short: "Manage OverlayFS mounts with git-like commands.",
+		Use:          "stackcrisp",
+		Short:        "Manage OverlayFS mounts with git-like commands.",
+		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// 校验全局选项
 			if err := opts.Global.Validate(); err != nil {
 				return err
 			}
-			// 设置日志级别
-			logrusLogger := logrus.New()
-			switch opts.Global.Verbosity {
-			case 1:
-				logrusLogger.SetLevel(logrus.DebugLevel)
-			case 2:
-				logrusLogger.SetLevel(logrus.TraceLevel)
-			default:
-				logrusLogger.SetLevel(logrus.InfoLevel)
+			// 设置日志
+			logger := setLogger(cmd, opts.Global.Verbosity)
+			// 切换到 root
+			if need, err := switchToRoot(cmd); need {
+				return err
 			}
-			// 将 logger 注入上下文
-			logger := logrusr.New(logrusLogger)
-			cmd.SetContext(logr.NewContext(cmd.Context(), logger))
 			// 设置工作目录
-			if opts.Global.Chdir != "" {
-				if err := os.Chdir(opts.Global.Chdir); err != nil {
-					return fmt.Errorf("change working directory to %q error: %w", opts.Global.Chdir, err)
-				}
+			if err := changeWorkingDirectory(cmd, opts.Global.Chdir); err != nil {
+				return err
 			}
 
 			logger.V(1).Info(fmt.Sprintf("command: %q, args: %#v", cmd.Name(), args))

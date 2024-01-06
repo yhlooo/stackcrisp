@@ -8,8 +8,6 @@ import (
 
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
 	"github.com/yhlooo/stackcrisp/pkg/manager"
-	logutil "github.com/yhlooo/stackcrisp/pkg/utils/log"
-	"github.com/yhlooo/stackcrisp/pkg/utils/sudo"
 )
 
 // NewCommitCommandWithOptions 创建一个基于选项的 commit 命令
@@ -17,17 +15,13 @@ func NewCommitCommandWithOptions(opts options.CommitOptions, globalOptions optio
 	cmd := &cobra.Command{
 		Use:   "commit",
 		Short: "Record changes to the space.",
-		Args:  cobra.NoArgs,
+		Annotations: map[string]string{
+			AnnotationRunAsRoot: AnnotationValueTrue,
+		},
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
-
-			// 切换到 root
-			logutil.UserInfo(logger.V(1))
-			if !sudo.IsRoot() {
-				logger.Info("switch to root")
-				return sudo.RunAsRoot(ctx, sudoExtraArgs()...)
-			}
 
 			// 创建管理器
 			logger.V(1).Info(fmt.Sprintf("new manager, dataRoot: %q", globalOptions.GetDataRoot()))

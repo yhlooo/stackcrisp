@@ -164,9 +164,12 @@ func (mgr *defaultManager) GetWorkspaceFromPath(ctx context.Context, path string
 	if err != nil {
 		return nil, fmt.Errorf("get absolute path of %q error: %w", path, err)
 	}
-	mountPath, err := os.Readlink(absPath)
-	if err != nil {
-		return nil, fmt.Errorf("get workspace mount path error: %w", err)
+	mountPath := absPath
+	if fsutil.IsSymlink(absPath) {
+		mountPath, err = os.Readlink(absPath)
+		if err != nil {
+			return nil, fmt.Errorf("get workspace mount path error: %w", err)
+		}
 	}
 	absMountPath, err := filepath.Abs(mountPath)
 	if err != nil {

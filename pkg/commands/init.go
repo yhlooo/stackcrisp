@@ -10,8 +10,6 @@ import (
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
 	"github.com/yhlooo/stackcrisp/pkg/manager"
 	fsutil "github.com/yhlooo/stackcrisp/pkg/utils/fs"
-	logutil "github.com/yhlooo/stackcrisp/pkg/utils/log"
-	"github.com/yhlooo/stackcrisp/pkg/utils/sudo"
 )
 
 // NewInitCommandWithOptions 创建一个基于选项的 init 命令
@@ -19,17 +17,13 @@ func NewInitCommandWithOptions(_ options.InitOptions, globalOptions options.Glob
 	cmd := &cobra.Command{
 		Use:   "init [PATH]",
 		Short: "Create an empty Space or reinitialize an existing one.",
-		Args:  cobra.MaximumNArgs(1),
+		Annotations: map[string]string{
+			AnnotationRunAsRoot: AnnotationValueTrue,
+		},
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
-
-			// 切换到 root
-			logutil.UserInfo(logger.V(1))
-			if !sudo.IsRoot() {
-				logger.Info("switch to root")
-				return sudo.RunAsRoot(ctx, sudoExtraArgs()...)
-			}
 
 			target := "."
 			if len(args) > 0 {
