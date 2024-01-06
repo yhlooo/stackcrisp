@@ -296,6 +296,46 @@ func (mgr *defaultManager) Commit(ctx context.Context, ws workspaces.Workspace) 
 	return newWS, nil
 }
 
+// Clone 克隆工作空间
+func (mgr *defaultManager) Clone(
+	ctx context.Context,
+	sourceWS workspaces.Workspace,
+	targetPath string,
+) (workspaces.Workspace, error) {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
+	// 获取 space
+	space := sourceWS.Space()
+
+	// 获取头节点
+	headNode, ok := space.Tree().Get(sourceWS.Head())
+	if !ok {
+		return nil, fmt.Errorf("get workspace head layer %q not found", sourceWS.Head().Hex())
+	}
+
+	// 基于当前已经提交的最新层创建新挂载
+	mount, head, err := mgr.createMount(ctx, space, headNode.Parent().ID().Hex())
+	if err != nil {
+		return nil, fmt.Errorf("create mount error: %w", err)
+	}
+	logger.Info(fmt.Sprintf("forward to new head %q", headNode.Parent().ID().Hex()))
+
+	newWS := workspaces.New(targetPath, head, space, mount)
+
+	// 记录空间信息
+	logger.Info(fmt.Sprintf("saving space %s ...", space.ID()))
+	if err := space.Save(ctx); err != nil {
+		return nil, fmt.Errorf("save space error: %w", err)
+	}
+	// 记录工作空间信息
+	if err := mgr.saveWorkspaceInfo(ctx, newWS); err != nil {
+		return nil, fmt.Errorf("save workspace info error: %w", err)
+	}
+
+	return newWS, nil
+
+}
+
 // saveWorkspaceInfo 保存工作空间信息
 func (mgr *defaultManager) saveWorkspaceInfo(ctx context.Context, ws workspaces.Workspace) error {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/yhlooo/stackcrisp/pkg/mounts"
+	"github.com/yhlooo/stackcrisp/pkg/spaces/trees"
 	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 )
 
@@ -19,6 +20,8 @@ type SpaceOptions struct {
 type Space interface {
 	// ID 返回空间 ID
 	ID() uid.UID
+	// Tree 返回记录层的树
+	Tree() trees.Tree
 	// Init 初始化
 	Init(ctx context.Context) error
 	// Load 加载数据

@@ -50,6 +50,11 @@ func (space *defaultSpace) ID() uid.UID {
 	return space.id
 }
 
+// Tree 返回记录层的树
+func (space *defaultSpace) Tree() trees.Tree {
+	return space.layerTree
+}
+
 // Init 初始化
 func (space *defaultSpace) Init(ctx context.Context) error {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)

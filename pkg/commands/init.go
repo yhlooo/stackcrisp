@@ -48,7 +48,7 @@ func NewInitCommandWithOptions(_ options.InitOptions) *cobra.Command {
 			logger.Info("creating workspace ...")
 			ws, err := mgr.CreateWorkspace(ctx, targetAbsPath)
 			if err != nil {
-				return fmt.Errorf("create workspacespace error: %w", err)
+				return fmt.Errorf("create workspace error: %w", err)
 			}
 
 			// 展开 workspace

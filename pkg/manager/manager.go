@@ -16,6 +16,8 @@ type Manager interface {
 	GetWorkspaceFromPath(ctx context.Context, path string) (workspaces.Workspace, error)
 	// RemoveWorkspaceMount 删除工作空间挂载
 	RemoveWorkspaceMount(ctx context.Context, ws workspaces.Workspace) error
+	// Clone 克隆工作空间
+	Clone(ctx context.Context, ws workspaces.Workspace, targetPath string) (workspaces.Workspace, error)
 	// Commit 提交工作空间变更
 	Commit(ctx context.Context, ws workspaces.Workspace) (workspaces.Workspace, error)
 }
