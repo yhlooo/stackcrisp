@@ -33,7 +33,7 @@ type GlobalOptions struct {
 
 // Validate 校验选项是否合法
 func (o *GlobalOptions) Validate() error {
-	if o.Verbosity < 0 || o.Verbosity > 2 {
+	if o.Verbosity > 2 {
 		return fmt.Errorf("invalid log verbosity: %d (expected: 0, 1 or 2)", o.Verbosity)
 	}
 	return nil

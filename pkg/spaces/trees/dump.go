@@ -137,7 +137,7 @@ func Load(dump TreeDump) (Tree, error) {
 			return tree, fmt.Errorf("decode id %q of the node error: %w", nodeID, err)
 		}
 		if err := tree.AddBranch(name, nodeID); err != nil {
-			return tree, fmt.Errorf("add branch %q -> %q error: %w", name, nodeID)
+			return tree, fmt.Errorf("add branch %q -> %q error: %w", name, nodeID, err)
 		}
 	}
 
@@ -148,7 +148,7 @@ func Load(dump TreeDump) (Tree, error) {
 			return tree, fmt.Errorf("decode id %q of the node error: %w", nodeID, err)
 		}
 		if err := tree.AddTag(name, nodeID); err != nil {
-			return tree, fmt.Errorf("add tag %q -> %q error: %w", name, nodeID)
+			return tree, fmt.Errorf("add tag %q -> %q error: %w", name, nodeID, err)
 		}
 	}
 

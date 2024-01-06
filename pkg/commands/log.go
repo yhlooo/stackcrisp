@@ -43,7 +43,7 @@ func NewLogCommandWithOptions(_ *options.LogOptions) *cobra.Command {
 			// 获取提交历史
 			commits, err := mgr.GetHistory(ctx, ws, revision)
 			if err != nil {
-				return fmt.Errorf("get history of revision %q error: %w", err)
+				return fmt.Errorf("get history of revision %q error: %w", revision, err)
 			}
 
 			// 打印
