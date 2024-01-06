@@ -9,6 +9,7 @@ import (
 
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
 	"github.com/yhlooo/stackcrisp/pkg/manager"
+	cmdutil "github.com/yhlooo/stackcrisp/pkg/utils/cmd"
 	fsutil "github.com/yhlooo/stackcrisp/pkg/utils/fs"
 )
 
@@ -18,7 +19,7 @@ func NewInitCommandWithOptions(_ options.InitOptions, globalOptions options.Glob
 		Use:   "init [PATH]",
 		Short: "Create an empty Space or reinitialize an existing one.",
 		Annotations: map[string]string{
-			AnnotationRunAsRoot: AnnotationValueTrue,
+			cmdutil.AnnotationRunAsRoot: cmdutil.AnnotationValueTrue,
 		},
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -1,4 +1,4 @@
-package commands
+package cmd
 
 import (
 	"fmt"
@@ -15,13 +15,8 @@ import (
 	"github.com/yhlooo/stackcrisp/pkg/utils/sudo"
 )
 
-const (
-	AnnotationRunAsRoot = "run-as-root"
-	AnnotationValueTrue = "true"
-)
-
-// setLogger 设置命令日志
-func setLogger(cmd *cobra.Command, verbosity uint32) logr.Logger {
+// SetLogger 设置命令日志，并返回 logger
+func SetLogger(cmd *cobra.Command, verbosity uint32) logr.Logger {
 	// 设置日志级别
 	logrusLogger := logrus.New()
 	switch verbosity {
@@ -39,8 +34,8 @@ func setLogger(cmd *cobra.Command, verbosity uint32) logr.Logger {
 	return logger
 }
 
-// switchToRoot 切换到 root 用户运行
-func switchToRoot(cmd *cobra.Command) (bool, error) {
+// SwitchToRootIfNecessary 如果需要的话切换到 root 用户运行
+func SwitchToRootIfNecessary(cmd *cobra.Command) (bool, error) {
 	logger := logr.FromContextOrDiscard(cmd.Context())
 	logutil.UserInfo(logger.V(1))
 	if cmd.Annotations[AnnotationRunAsRoot] == AnnotationValueTrue && !sudo.IsRoot() {
@@ -73,8 +68,8 @@ func sudoExtraArgs() []string {
 	}
 }
 
-// changeWorkingDirectory 切换命令工作目录
-func changeWorkingDirectory(cmd *cobra.Command, path string) error {
+// ChangeWorkingDirectory 切换命令工作目录
+func ChangeWorkingDirectory(cmd *cobra.Command, path string) error {
 	defer func() {
 		pwd, _ := os.Getwd()
 		logger := logr.FromContextOrDiscard(cmd.Context())

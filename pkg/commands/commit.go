@@ -8,6 +8,7 @@ import (
 
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
 	"github.com/yhlooo/stackcrisp/pkg/manager"
+	cmdutil "github.com/yhlooo/stackcrisp/pkg/utils/cmd"
 )
 
 // NewCommitCommandWithOptions 创建一个基于选项的 commit 命令
@@ -16,7 +17,7 @@ func NewCommitCommandWithOptions(opts options.CommitOptions, globalOptions optio
 		Use:   "commit",
 		Short: "Record changes to the space.",
 		Annotations: map[string]string{
-			AnnotationRunAsRoot: AnnotationValueTrue,
+			cmdutil.AnnotationRunAsRoot: cmdutil.AnnotationValueTrue,
 		},
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {

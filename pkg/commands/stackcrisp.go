@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
+	cmdutil "github.com/yhlooo/stackcrisp/pkg/utils/cmd"
 )
 
 const (
@@ -24,13 +25,13 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 				return err
 			}
 			// 设置日志
-			logger := setLogger(cmd, opts.Global.Verbosity)
+			logger := cmdutil.SetLogger(cmd, opts.Global.Verbosity)
 			// 切换到 root
-			if need, err := switchToRoot(cmd); need {
+			if need, err := cmdutil.SwitchToRootIfNecessary(cmd); need {
 				return err
 			}
 			// 设置工作目录
-			if err := changeWorkingDirectory(cmd, opts.Global.Chdir); err != nil {
+			if err := cmdutil.ChangeWorkingDirectory(cmd, opts.Global.Chdir); err != nil {
 				return err
 			}
 
