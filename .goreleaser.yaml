@@ -1,0 +1,33 @@
+# goreleaser 配置
+# 参考 https://goreleaser.com
+
+version: 1
+
+builds:
+  - main: ./cmd/stackcrisp
+    binary: stackcrisp
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -X main.Version={{ .Version }}
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .Binary }}-
+      {{- .Version }}-
+      {{- .Os }}-
+      {{- .Arch }}{{- if .Arm }}v{{ .Arm }}{{ end }}
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

@@ -29,4 +29,5 @@ go.work
 .DS_Store
 
 # Outputs
+dist/
 outputs/

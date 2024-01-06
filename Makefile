@@ -5,8 +5,12 @@ OUTPUT_ROOT := outputs
 BIN_ROOT := $(OUTPUT_ROOT)/bin
 
 .PHONY: build
-build: clean
+build:
 	go build -o "$(BIN_ROOT)/$(BIN_NAME)" "$(GOPKG)"
+
+.PHONT: test
+test:
+	go test ./...
 
 .PHONY: install
 install:
