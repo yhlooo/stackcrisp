@@ -8,6 +8,7 @@ func NewDefaultOptions() Options {
 		Clone:    NewDefaultCloneOptions(),
 		Commit:   NewDefaultCommitOptions(),
 		Checkout: NewDefaultCheckoutOptions(),
+		Log:      NewDefaultLogOptions(),
 	}
 }
 
@@ -23,4 +24,6 @@ type Options struct {
 	Commit CommitOptions `json:"commit,omitempty" yaml:"commit,omitempty"`
 	// checkout 命令选项
 	Checkout CheckoutOptions `json:"checkout,omitempty" yaml:"checkout,omitempty"`
+	// log 命令选项
+	Log LogOptions `json:"log,omitempty" yaml:"log,omitempty"`
 }

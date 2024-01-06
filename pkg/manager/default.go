@@ -15,6 +15,7 @@ import (
 	"github.com/yhlooo/stackcrisp/pkg/layers"
 	"github.com/yhlooo/stackcrisp/pkg/mounts"
 	"github.com/yhlooo/stackcrisp/pkg/spaces"
+	"github.com/yhlooo/stackcrisp/pkg/spaces/trees"
 	fsutil "github.com/yhlooo/stackcrisp/pkg/utils/fs"
 	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 	"github.com/yhlooo/stackcrisp/pkg/workspaces"
@@ -343,7 +344,7 @@ func (mgr *defaultManager) Clone(
 	// 获取头节点
 	headNode, ok := space.Tree().Get(sourceWS.Head())
 	if !ok {
-		return nil, fmt.Errorf("get workspace head layer %q not found", sourceWS.Head().Hex())
+		return nil, fmt.Errorf("workspace head layer %q not found", sourceWS.Head().Hex())
 	}
 
 	// 基于当前已经提交的最新层创建新挂载
@@ -366,6 +367,42 @@ func (mgr *defaultManager) Clone(
 	}
 
 	return newWS, nil
+}
+
+// GetHistory 获取提交历史
+func (mgr *defaultManager) GetHistory(
+	_ context.Context,
+	ws workspaces.Workspace,
+	revision string,
+) ([]Commit, error) {
+	// 获取 space
+	space := ws.Space()
+
+	// 获取指定节点
+	var node trees.Node
+	if revision == "" || revision == "HEAD" {
+		head, ok := space.Tree().Get(ws.Head())
+		if ok {
+			node = head.Parent()
+		}
+	} else {
+		node, _ = space.Tree().Search(revision)
+	}
+	if node == nil {
+		return nil, fmt.Errorf("revision %q not found", revision)
+	}
+
+	var commits []Commit
+	cur := node
+	for !cur.IsRoot() {
+		commits = append(commits, Commit{
+			ID:      cur.ID(),
+			Message: "",
+		})
+		cur = cur.Parent()
+	}
+
+	return commits, nil
 }
 
 // saveWorkspaceInfo 保存工作空间信息

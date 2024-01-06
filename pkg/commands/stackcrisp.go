@@ -67,6 +67,7 @@ func NewStackCrispCommandWithOptions(opts options.Options) *cobra.Command {
 		NewCloneCommandWithOptions(&opts.Clone),
 		NewCommitCommandWithOptions(&opts.Commit),
 		NewCheckoutCommandWithOptions(&opts.Checkout),
+		NewLogCommandWithOptions(&opts.Log),
 	)
 
 	return cmd
