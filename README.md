@@ -1,6 +1,6 @@
 # StackCrisp
 
-使用类 [git]((https://git-scm.com/)) 命令操作 [overlayfs](https://docs.kernel.org/filesystems/overlayfs.html) 挂载
+使用类 [git](https://git-scm.com/) 命令操作 [overlayfs](https://docs.kernel.org/filesystems/overlayfs.html) 挂载
 
 ---
 
@@ -8,7 +8,7 @@
 
 ## 这个项目从何而来
 
-因为一些巧合我接触到了 [Overlay 文件系统](https://docs.kernel.org/filesystems/overlayfs.html) （或者说 overlayfs ），在了解它的过程中，我有一种模糊的感觉，它和我理解的 [git]((https://git-scm.com/)) 有某些相似性：
+因为一些巧合我接触到了 [Overlay 文件系统](https://docs.kernel.org/filesystems/overlayfs.html) （或者说 overlayfs ），在了解它的过程中，我有一种模糊的感觉，它和我理解的 [git](https://git-scm.com/) 有某些相似性：
 
 overlayfs 是一种分层的文件系统，其中每一层存储的是基于下层的“变更”，所有层叠加起来是文件系统存储的完整内容。十分类似的是， git 中每个 commit 存储的是基于之前内容的“变更”，从仓库建立到 HEAD 指针之间所有 commit 叠加起来就是当前仓库中存储的文件内容。 **那么能否使用 overlayfs 实现一些类似 git 的版本管理操作呢？**
 
