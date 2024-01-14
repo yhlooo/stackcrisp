@@ -13,10 +13,10 @@ import (
 )
 
 // NewInitCommandWithOptions 创建一个基于选项的 init 命令
-func NewInitCommandWithOptions(_ *options.InitOptions) *cobra.Command {
+func NewInitCommandWithOptions(opts *options.InitOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "init [<directory>]",
-		Short:   "Create an empty Space or reinitialize an existing one",
+		Short:   "Create an empty space or reinitialize an existing one",
 		GroupID: groupStart,
 		Annotations: map[string]string{
 			cmdutil.AnnotationRunAsRoot:      cmdutil.AnnotationValueTrue,
@@ -46,7 +46,7 @@ func NewInitCommandWithOptions(_ *options.InitOptions) *cobra.Command {
 			mgr := cmdutil.ManagerFromContext(ctx)
 			// 创建 workspace
 			logger.Info("creating workspace ...")
-			ws, err := mgr.CreateWorkspace(ctx, targetAbsPath)
+			ws, err := mgr.CreateWorkspace(ctx, targetAbsPath, opts.InitialBranch)
 			if err != nil {
 				return fmt.Errorf("create workspace error: %w", err)
 			}
@@ -60,5 +60,9 @@ func NewInitCommandWithOptions(_ *options.InitOptions) *cobra.Command {
 			return nil
 		},
 	}
+
+	// 绑定选项到命令行参数
+	opts.AddPFlags(cmd.Flags())
+
 	return cmd
 }

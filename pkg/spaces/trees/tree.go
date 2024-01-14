@@ -7,6 +7,16 @@ import (
 	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 )
 
+// KeyType 节点 key 类型
+type KeyType string
+
+// KeyType 的合法值
+const (
+	Branch KeyType = "Branch"
+	Tag    KeyType = "Tag"
+	Commit KeyType = "Commit"
+)
+
 // Tree 树
 type Tree interface {
 	// Get 通过节点 ID 获取节点
@@ -24,7 +34,7 @@ type Tree interface {
 	// Search 通过 key 搜索节点
 	//
 	// key 可以是各种形式的节点 ID 、分支名、标签名
-	Search(key string) (Node, bool)
+	Search(key string) (Node, KeyType, bool)
 
 	// AddNode 往树上添加节点
 	//
@@ -141,7 +151,7 @@ func (tree *defaultTree) Branches() map[string]Node {
 // Search 通过 key 搜索节点
 //
 // key 可以是各种形式的节点 ID 、分支名、标签名
-func (tree *defaultTree) Search(key string) (Node, bool) {
+func (tree *defaultTree) Search(key string) (Node, KeyType, bool) {
 	// 首先尝试从节点 ID 搜索
 	var nodeID uid.UID
 	if id, err := uid.DecodeUID128FromHex(key); err == nil {
@@ -152,21 +162,21 @@ func (tree *defaultTree) Search(key string) (Node, bool) {
 	if nodeID != nil {
 		node, ok := tree.Get(nodeID)
 		if ok {
-			return node, true
+			return node, Commit, true
 		}
 	}
 
 	// 然后是标签
 	if node, ok := tree.GetByTag(key); ok {
-		return node, true
+		return node, Tag, true
 	}
 
 	// 然后是分支
 	if node, ok := tree.GetByBranch(key); ok {
-		return node, true
+		return node, Branch, true
 	}
 
-	return nil, false
+	return nil, "", false
 }
 
 // AddNode 往树上添加节点
@@ -307,6 +317,7 @@ func (tree *defaultTree) UpdateBranch(name string, nodeID uid.UID, force bool) e
 			connected = true
 			break
 		}
+		cur = cur.Parent()
 	}
 	if !connected {
 		return fmt.Errorf(

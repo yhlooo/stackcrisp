@@ -11,7 +11,7 @@ type Manager interface {
 	// Prepare 准备
 	Prepare(ctx context.Context) error
 	// CreateWorkspace 创建工作空间
-	CreateWorkspace(ctx context.Context, path string) (workspaces.Workspace, error)
+	CreateWorkspace(ctx context.Context, path, branch string) (workspaces.Workspace, error)
 	// GetWorkspaceFromPath 从指定目录获取对应工作空间
 	GetWorkspaceFromPath(ctx context.Context, path string) (workspaces.Workspace, error)
 	// RemoveWorkspaceMount 删除工作空间挂载

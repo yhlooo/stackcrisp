@@ -126,16 +126,16 @@ func (space *defaultSpace) Save(ctx context.Context) error {
 // CreateMount 创建一个该空间的挂载
 func (space *defaultSpace) CreateMount(
 	ctx context.Context,
-	revision string,
+	commit uid.UID,
 	mountID uid.UID,
 	mountOpts mounts.MountOptions,
 ) (mounts.Mount, trees.Node, error) {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 
 	// 找到 lower 的最上层节点
-	lowerNode, ok := space.layerTree.Search(revision)
+	lowerNode, ok := space.layerTree.Get(commit)
 	if !ok {
-		return nil, nil, fmt.Errorf("layer %q not found", revision)
+		return nil, nil, fmt.Errorf("layer %q not found", commit.Hex())
 	}
 
 	// 创建一个作为 upper 层的节点
