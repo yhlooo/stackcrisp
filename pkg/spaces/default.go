@@ -129,7 +129,7 @@ func (space *defaultSpace) CreateMount(
 	revision string,
 	mountID uid.UID,
 	mountOpts mounts.MountOptions,
-) (mounts.Mount, uid.UID, error) {
+) (mounts.Mount, trees.Node, error) {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 
 	// 找到 lower 的最上层节点
@@ -137,6 +137,7 @@ func (space *defaultSpace) CreateMount(
 	if !ok {
 		return nil, nil, fmt.Errorf("layer %q not found", revision)
 	}
+
 	// 创建一个作为 upper 层的节点
 	logger.Info("creating upper layer ...")
 	upper, err := space.layerManger.Create(ctx)
@@ -144,9 +145,11 @@ func (space *defaultSpace) CreateMount(
 		return nil, nil, fmt.Errorf("create upper layer error: %w", err)
 	}
 	logger.V(1).Info(fmt.Sprintf("add upper layer %s to tree", upper.ID()))
-	if err := space.layerTree.AddNode(lowerNode.ID(), trees.NewNode(upper.ID())); err != nil {
+	upperNode := trees.NewNode(upper.ID())
+	if err := space.layerTree.AddNode(lowerNode.ID(), upperNode); err != nil {
 		return nil, nil, fmt.Errorf("add upper layer to tree error: %w", err)
 	}
+
 	// 找到所有 lower 层
 	var layerSet []layers.Layer
 	cur := lowerNode
@@ -159,12 +162,14 @@ func (space *defaultSpace) CreateMount(
 		cur = cur.Parent()
 	}
 	slices.Reverse(layerSet)
+
 	// 加上 upper 层
 	layerSet = append(layerSet, upper)
 
 	logger.V(1).Info(fmt.Sprintf("mount layers: %v", layerSet))
 	mount, err := mounts.New(ctx, mountID, layerSet, mountOpts)
-	return mount, upper.ID(), err
+
+	return mount, upperNode, err
 }
 
 // treeDumpSavePath 返回导出的树存储路径

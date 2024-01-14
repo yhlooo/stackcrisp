@@ -29,5 +29,5 @@ type Space interface {
 	// Save 将数据持久化
 	Save(ctx context.Context) error
 	// CreateMount 创建一个该空间的挂载
-	CreateMount(ctx context.Context, revision string, mountID uid.UID, mountOpts mounts.MountOptions) (mount mounts.Mount, head uid.UID, err error)
+	CreateMount(ctx context.Context, revision string, mountID uid.UID, mountOpts mounts.MountOptions) (mount mounts.Mount, head trees.Node, err error)
 }

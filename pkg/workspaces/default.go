@@ -4,35 +4,44 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/go-logr/logr"
 
 	"github.com/yhlooo/stackcrisp/pkg/mounts"
 	"github.com/yhlooo/stackcrisp/pkg/spaces"
+	"github.com/yhlooo/stackcrisp/pkg/spaces/trees"
 	fsutil "github.com/yhlooo/stackcrisp/pkg/utils/fs"
 	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 )
 
 const (
 	loggerName = "workspaces"
+
+	remoteBranchPrefixInTree = "global/"
+	remoteBranchPrefix       = "origin/"
 )
 
 // New 创建一个工作空间
-func New(path string, head uid.UID, space spaces.Space, mount mounts.Mount) Workspace {
+func New(id uid.UID, path string, space spaces.Space, mount mounts.Mount, head trees.Node, branch string) Workspace {
 	return &defaultWorkspace{
-		path:  path,
-		head:  head,
-		space: space,
-		mount: mount,
+		id:     id,
+		path:   path,
+		space:  space,
+		mount:  mount,
+		head:   head,
+		branch: branch,
 	}
 }
 
 // defaultWorkspace 是 Workspace 的一个默认实现
 type defaultWorkspace struct {
-	path  string
-	head  uid.UID
-	space spaces.Space
-	mount mounts.Mount
+	id     uid.UID
+	path   string
+	space  spaces.Space
+	mount  mounts.Mount
+	head   trees.Node
+	branch string
 }
 
 var _ Workspace = &defaultWorkspace{}
@@ -40,11 +49,6 @@ var _ Workspace = &defaultWorkspace{}
 // Path 返回工作空间路径
 func (ws *defaultWorkspace) Path() string {
 	return ws.path
-}
-
-// Head 返回头指针
-func (ws *defaultWorkspace) Head() uid.UID {
-	return ws.head
 }
 
 // Space 返回工作空间对应空间
@@ -55,6 +59,16 @@ func (ws *defaultWorkspace) Space() spaces.Space {
 // Mount 返回工作空间对应挂载
 func (ws *defaultWorkspace) Mount() mounts.Mount {
 	return ws.mount
+}
+
+// Head 返回头指针
+func (ws *defaultWorkspace) Head() trees.Node {
+	return ws.head
+}
+
+// Branch 返回当前分支
+func (ws *defaultWorkspace) Branch() string {
+	return ws.branch
 }
 
 // Expand 展开工作空间
@@ -96,4 +110,28 @@ func (ws *defaultWorkspace) Expand(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// LocalBranches 返回本地分支列表
+func (ws *defaultWorkspace) LocalBranches() []string {
+	var ret []string
+	for branch := range ws.Space().Tree().Branches() {
+		if strings.HasPrefix(branch, remoteBranchPrefixInTree) {
+			continue
+		}
+		ret = append(ret, strings.TrimPrefix(branch, ws.id.Base32()+"/"))
+	}
+	return ret
+}
+
+// RemoteBranches 返回远程分支列表
+func (ws *defaultWorkspace) RemoteBranches() []string {
+	var ret []string
+	for branch := range ws.Space().Tree().Branches() {
+		if !strings.HasPrefix(branch, remoteBranchPrefixInTree) {
+			continue
+		}
+		ret = append(ret, remoteBranchPrefix+strings.TrimPrefix(branch, remoteBranchPrefixInTree))
+	}
+	return ret
 }
