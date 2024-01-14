@@ -8,6 +8,7 @@ import (
 
 	"github.com/yhlooo/stackcrisp/pkg/commands/options"
 	cmdutil "github.com/yhlooo/stackcrisp/pkg/utils/cmd"
+	"github.com/yhlooo/stackcrisp/pkg/workspaces"
 )
 
 // NewBranchCommandWithOptions 创建一个基于选项的 branch 命令
@@ -37,22 +38,22 @@ func NewBranchCommandWithOptions(opts *options.BranchOptions) *cobra.Command {
 			switch {
 			case opts.List:
 				// 列出分支
-				var branches []string
+				var branches []workspaces.Branch
 				switch {
 				case opts.Remotes:
 					branches = ws.RemoteBranches()
 				case opts.All:
-					branches = append(ws.LocalBranches(), ws.RemoteBranches()...)
+					branches = ws.AllBranches()
 				default:
 					branches = ws.LocalBranches()
 				}
 				for _, name := range branches {
-					fmt.Println(name)
+					fmt.Println(name.LocalName())
 				}
 			case opts.ShowCurrent:
 				// 显示当前分支
-				if branch := ws.Branch(); branch != "" {
-					fmt.Println(ws.Branch())
+				if branch := ws.Branch(); branch != nil {
+					fmt.Println(branch.LocalName())
 				}
 			case opts.Move:
 				// TODO: ...
@@ -64,5 +65,9 @@ func NewBranchCommandWithOptions(opts *options.BranchOptions) *cobra.Command {
 			return nil
 		},
 	}
+
+	// 绑定选项到命令行参数
+	opts.AddPFlags(cmd.Flags())
+
 	return cmd
 }

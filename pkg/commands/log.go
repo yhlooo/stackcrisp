@@ -48,7 +48,33 @@ func NewLogCommandWithOptions(_ *options.LogOptions) *cobra.Command {
 
 			// 打印
 			for _, c := range commits {
-				fmt.Printf("\033[33mcommit %s\033[0m\n", c.ID.Hex())
+				var pointers []string
+				for _, t := range c.Tags {
+					pointers = append(pointers, fmt.Sprintf("\033[33mtag: %s\033[0m", t))
+				}
+				for _, b := range c.Branches {
+					if ws.Branch().FullName() == b.FullName() {
+						pointers = append(
+							[]string{fmt.Sprintf("\033[34mHEAD -> \033[32m%s\033[0m", b.LocalName())},
+							pointers...,
+						)
+					} else {
+						if b.IsLocal() {
+							pointers = append(pointers, fmt.Sprintf("\033[34m%s\033[0m", b.LocalName()))
+						} else {
+							pointers = append(pointers, fmt.Sprintf("\033[31m%s\033[0m", b.LocalName()))
+						}
+					}
+				}
+
+				if pointers != nil {
+					fmt.Printf(
+						"\033[33mcommit %s\033[0m (%s)\n",
+						c.ID.Hex(), strings.Join(pointers, "\033[33m, \033[0m"),
+					)
+				} else {
+					fmt.Printf("\033[33mcommit %s\033[0m\n", c.ID.Hex())
+				}
 				if c.Date != nil {
 					fmt.Printf("Date:  %s\n", c.Date.Format(time.ANSIC+" -0700"))
 				}
