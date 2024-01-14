@@ -119,6 +119,7 @@ type WorkspaceInfo struct {
 	Head    string `json:"head"`
 	SpaceID string `json:"sapceID"`
 	MountID string `json:"mountID"`
+	Branch  string `json:"branch"`
 }
 
 // CreateWorkspace 创建一个工作空间
@@ -142,7 +143,7 @@ func (mgr *defaultManager) CreateWorkspace(ctx context.Context, path string) (wo
 		return nil, fmt.Errorf("create mount error: %w", err)
 	}
 
-	ws := workspaces.New(absPath, head, space, mount)
+	ws := workspaces.New(mount.ID(), absPath, space, mount, head, "")
 
 	// 记录空间信息
 	logger.Info(fmt.Sprintf("saving space %s ...", space.ID()))
@@ -225,8 +226,12 @@ func (mgr *defaultManager) GetWorkspaceFromPath(ctx context.Context, path string
 	if err != nil {
 		return nil, fmt.Errorf("parse workspace head id %q error: %w", wsInfo.Head, err)
 	}
+	headNode, ok := space.Tree().Get(head)
+	if !ok {
+		return nil, fmt.Errorf("head id %q not found", head)
+	}
 
-	return workspaces.New(absPath, head, space, mount), nil
+	return workspaces.New(mount.ID(), absPath, space, mount, headNode, wsInfo.Branch), nil
 }
 
 // RemoveWorkspaceMount 删除工作空间挂载
@@ -270,7 +275,11 @@ func (mgr *defaultManager) RemoveWorkspaceMount(ctx context.Context, ws workspac
 }
 
 // Commit 提交工作空间变更
-func (mgr *defaultManager) Commit(ctx context.Context, ws workspaces.Workspace, info Commit) (workspaces.Workspace, error) {
+func (mgr *defaultManager) Commit(
+	ctx context.Context,
+	ws workspaces.Workspace,
+	info Commit,
+) (workspaces.Workspace, error) {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 
 	// 补充信息
@@ -283,10 +292,7 @@ func (mgr *defaultManager) Commit(ctx context.Context, ws workspaces.Workspace, 
 	space := ws.Space()
 
 	// 记录 commit 信息
-	headNode, ok := space.Tree().Get(ws.Head())
-	if !ok {
-		return nil, fmt.Errorf("workspace head layer %q not found", ws.Head().Hex())
-	}
+	headNode := ws.Head()
 	info.SetToNode(headNode)
 
 	// 基于当前头指针创新新挂载
@@ -294,9 +300,9 @@ func (mgr *defaultManager) Commit(ctx context.Context, ws workspaces.Workspace, 
 	if err != nil {
 		return nil, fmt.Errorf("create mount error: %w", err)
 	}
-	logger.Info(fmt.Sprintf("forward to new head %q", ws.Head().Hex()))
+	logger.Info(fmt.Sprintf("forward to new head %q", ws.Head().ID().Hex()))
 
-	newWS := workspaces.New(ws.Path(), head, space, mount)
+	newWS := workspaces.New(mount.ID(), ws.Path(), space, mount, head, "")
 
 	// 记录空间信息
 	logger.Info(fmt.Sprintf("saving space %s ...", space.ID()))
@@ -327,9 +333,9 @@ func (mgr *defaultManager) Checkout(
 	if err != nil {
 		return nil, fmt.Errorf("create mount error: %w", err)
 	}
-	logger.Info(fmt.Sprintf("forward to new head %q", ws.Head().Hex()))
+	logger.Info(fmt.Sprintf("forward to new head %q", ws.Head().ID().Hex()))
 
-	newWS := workspaces.New(ws.Path(), head, space, mount)
+	newWS := workspaces.New(mount.ID(), ws.Path(), space, mount, head, "")
 
 	// 记录空间信息
 	logger.Info(fmt.Sprintf("saving space %s ...", space.ID()))
@@ -356,10 +362,7 @@ func (mgr *defaultManager) Clone(
 	space := sourceWS.Space()
 
 	// 获取头节点
-	headNode, ok := space.Tree().Get(sourceWS.Head())
-	if !ok {
-		return nil, fmt.Errorf("workspace head layer %q not found", sourceWS.Head().Hex())
-	}
+	headNode := sourceWS.Head()
 
 	// 基于当前已经提交的最新层创建新挂载
 	mount, head, err := mgr.createMount(ctx, space, headNode.Parent().ID().Hex())
@@ -368,7 +371,7 @@ func (mgr *defaultManager) Clone(
 	}
 	logger.Info(fmt.Sprintf("forward to new head %q", headNode.Parent().ID().Hex()))
 
-	newWS := workspaces.New(targetPath, head, space, mount)
+	newWS := workspaces.New(mount.ID(), targetPath, space, mount, head, "")
 
 	// 记录空间信息
 	logger.Info(fmt.Sprintf("saving space %s ...", space.ID()))
@@ -384,21 +387,14 @@ func (mgr *defaultManager) Clone(
 }
 
 // GetHistory 获取提交历史
-func (mgr *defaultManager) GetHistory(
-	_ context.Context,
-	ws workspaces.Workspace,
-	revision string,
-) ([]Commit, error) {
+func (mgr *defaultManager) GetHistory(_ context.Context, ws workspaces.Workspace, revision string) ([]Commit, error) {
 	// 获取 space
 	space := ws.Space()
 
 	// 获取指定节点
 	var node trees.Node
 	if revision == "" || revision == "HEAD" {
-		head, ok := space.Tree().Get(ws.Head())
-		if ok {
-			node = head.Parent()
-		}
+		node = ws.Head().Parent()
 	} else {
 		node, _ = space.Tree().Search(revision)
 	}
@@ -423,9 +419,10 @@ func (mgr *defaultManager) saveWorkspaceInfo(ctx context.Context, ws workspaces.
 	// 序列化
 	wsInfoRaw, err := json.Marshal(&WorkspaceInfo{
 		Path:    ws.Path(),
-		Head:    ws.Head().Hex(),
 		SpaceID: ws.Space().ID().Base32(),
 		MountID: ws.Mount().ID().Base32(),
+		Head:    ws.Head().ID().Hex(),
+		Branch:  ws.Branch(),
 	})
 	if err != nil {
 		return fmt.Errorf("marshal workspace info to json error: %w", err)
@@ -490,7 +487,7 @@ func (mgr *defaultManager) createMount(
 	ctx context.Context,
 	space spaces.Space,
 	revision string,
-) (mounts.Mount, uid.UID, error) {
+) (mounts.Mount, trees.Node, error) {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 
 	// 创建挂载目录
@@ -501,11 +498,13 @@ func (mgr *defaultManager) createMount(
 	if err := os.Mkdir(mountDataRoot, 0755); err != nil {
 		return nil, nil, fmt.Errorf("make directory %q for mount data root error: %w", mountDataRoot, err)
 	}
+
 	// 挂载
 	mount, head, err := space.CreateMount(ctx, revision, mountID, mounts.MountOptions{
 		MountDataRoot: mountDataRoot,
 		ChownUID:      mgr.chownUID,
 		ChownGID:      mgr.chownGID,
 	})
+
 	return mount, head, err
 }
