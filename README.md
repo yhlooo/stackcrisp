@@ -45,6 +45,8 @@ go install github.com/yhlooo/stackcrisp/cmd/stackcrisp@latest
 - `clone` 克隆一个已有目录
 - `commit` 提交变更
 - `checkout` 切换到指定 commit
+- `branch` 创建、列出和删除分支
+- `tag` 创建、列出和删除标签
 - `log` 查看提交历史
 
 已知问题：
@@ -53,10 +55,9 @@ go install github.com/yhlooo/stackcrisp/cmd/stackcrisp@latest
 
 以下是规划中的能力：（按我认为的优先级由高到低排序）
 
-1. 分支概念。包括 `reset` `branch` `switch` 等命令，以及在 `checkout` 命令中添加分支相关操作
+1. 完善分支概念。包括 `reset` `branch` `switch` 等命令，以及在 `checkout` 命令中添加分支相关操作
 2. 更完善的状态和历史查询功能。包括 `log` `status` `diff` 等命令
-3. tag 概念。包括 `tag` 命令，以及其它命令中 tag 相关操作
-4. （可选）编辑提交树。包括 `rebase` `cherry-pick` `merge` 等命令
+3（可选）编辑提交树。包括 `rebase` `cherry-pick` `merge` 等命令
 
 ## 为什么是 `StackCrisp`
 
