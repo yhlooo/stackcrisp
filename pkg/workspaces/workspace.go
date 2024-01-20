@@ -17,6 +17,8 @@ import (
 
 const (
 	loggerName = "workspaces"
+
+	headTag = "HEAD"
 )
 
 // New 创建一个工作空间
@@ -206,6 +208,10 @@ func (ws *defaultWorkspace) SetBranch(localName string) error {
 //
 // key 可以是各种形式的节点 ID 、分支名、标签名
 func (ws *defaultWorkspace) Search(key string) (trees.Node, trees.KeyType, bool) {
+	// 首先是 HEAD
+	if key == headTag {
+		return ws.Head().Parent(), trees.Commit, true
+	}
 	// 首先直接搜
 	// 包括 commit 、 tag 、 分支完整名
 	if node, keyType, ok := ws.space.Tree().Search(key); ok {

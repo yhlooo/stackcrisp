@@ -9,6 +9,7 @@ func NewDefaultOptions() Options {
 		Commit:   NewDefaultCommitOptions(),
 		Checkout: NewDefaultCheckoutOptions(),
 		Branch:   NewDefaultBranchOptions(),
+		Tag:      NewDefaultTagOptions(),
 		Log:      NewDefaultLogOptions(),
 	}
 }
@@ -27,6 +28,8 @@ type Options struct {
 	Checkout CheckoutOptions `json:"checkout,omitempty" yaml:"checkout,omitempty"`
 	// branch 命令选项
 	Branch BranchOptions `json:"branch,omitempty" yaml:"branch,omitempty"`
+	// tag 命令选项
+	Tag TagOptions `json:"tag,omitempty" yaml:"tag,omitempty"`
 	// log 命令选项
 	Log LogOptions `json:"log,omitempty" yaml:"log,omitempty"`
 }

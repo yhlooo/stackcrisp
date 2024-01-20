@@ -417,12 +417,7 @@ func (mgr *defaultManager) Clone(
 // GetHistory 获取提交历史
 func (mgr *defaultManager) GetHistory(_ context.Context, ws workspaces.Workspace, revision string) ([]Commit, error) {
 	// 获取指定节点
-	var node trees.Node
-	if revision == "" || revision == "HEAD" {
-		node = ws.Head().Parent()
-	} else {
-		node, _, _ = ws.Search(revision)
-	}
+	node, _, _ := ws.Search(revision)
 	if node == nil {
 		return nil, fmt.Errorf("revision %q not found", revision)
 	}
