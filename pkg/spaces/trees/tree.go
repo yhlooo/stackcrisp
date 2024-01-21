@@ -60,6 +60,10 @@ type Tree interface {
 	// - force = true: 允许将分支头指针移动任何位置
 	// - force = false: 仅允许将分支头指针移动到当前位置的子节点
 	UpdateBranch(name string, nodeID uid.UID, force bool) error
+	// DeleteBranch 删除分支
+	//
+	// 删除成功则返回 true 、不存在则返回 false
+	DeleteBranch(name string) bool
 }
 
 // NewTree 创建一个 Tree
@@ -328,6 +332,21 @@ func (tree *defaultTree) UpdateBranch(name string, nodeID uid.UID, force bool) e
 
 	tree.branches[name] = node
 	return nil
+}
+
+// DeleteBranch 删除分支
+//
+// 删除成功则返回 true 、不存在则返回 false
+func (tree *defaultTree) DeleteBranch(name string) bool {
+	tree.branchesLock.Lock()
+	defer tree.branchesLock.Unlock()
+
+	if _, ok := tree.branches[name]; !ok {
+		return false
+	}
+	delete(tree.branches, name)
+
+	return true
 }
 
 // updateIndexes 更新索引

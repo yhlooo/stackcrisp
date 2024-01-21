@@ -42,6 +42,8 @@ type Workspace interface {
 	SetBranch(localName string) error
 	// AddBranch 添加分支
 	AddBranch(ctx context.Context, branchLocalName string, ref string, force bool) error
+	// DeleteBranch 删除分支
+	DeleteBranch(ctx context.Context, name string, global bool) error
 
 	// Tags 返回标签列表
 	Tags() []string

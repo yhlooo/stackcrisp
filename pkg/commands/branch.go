@@ -45,12 +45,9 @@ func NewBranchCommandWithOptions(opts *options.BranchOptions) *cobra.Command {
 				if branch := ws.Branch(); branch != nil {
 					fmt.Println(branch.LocalName())
 				}
-			case opts.Move:
-				// TODO: 移动分支
-			case opts.Copy:
-				// TODO: 拷贝分支
 			case opts.Delete:
-				// TODO: 删除分支
+				// 删除分支
+				return runDeleteBranch(ctx, ws, args, opts)
 			default:
 				if len(args) == 0 {
 					// 列出分支
@@ -99,4 +96,16 @@ func runAddBranch(ctx context.Context, ws workspaces.Workspace, args []string, o
 	}
 	logger.V(1).Info(fmt.Sprintf("add branch %q to %q", branchLocalName, ref))
 	return ws.AddBranch(ctx, branchLocalName, ref, opts.Force)
+}
+
+// runDeleteBranch 删除分支
+func runDeleteBranch(ctx context.Context, ws workspaces.Workspace, args []string, opts *options.BranchOptions) error {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+	for _, branchName := range args {
+		logger.V(1).Info(fmt.Sprintf("delete branch %q, remote: %t", branchName, opts.Remotes))
+		if err := ws.DeleteBranch(ctx, branchName, opts.Remotes); err != nil {
+			return err
+		}
+	}
+	return nil
 }

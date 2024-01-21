@@ -254,6 +254,33 @@ func (ws *defaultWorkspace) AddBranch(ctx context.Context, branchLocalName strin
 	return nil
 }
 
+// DeleteBranch 删除分支
+func (ws *defaultWorkspace) DeleteBranch(ctx context.Context, name string, global bool) error {
+	// 当前分支不能删除
+	if !global && name == ws.branch {
+		return fmt.Errorf("can not delete branch %q checked out", name)
+	}
+
+	var branch BranchInfo
+	if global {
+		branch = NewGlobalBranch(name)
+	} else {
+		branch = NewLocalBranch(ws.id, name)
+	}
+
+	// 删除
+	if ok := ws.Space().Tree().DeleteBranch(branch.FullName()); !ok {
+		return fmt.Errorf("branch %q not found", branch.LocalName())
+	}
+
+	// 保存
+	if err := ws.Space().Save(ctx); err != nil {
+		return fmt.Errorf("save space info error: %w", err)
+	}
+
+	return nil
+}
+
 // Tags 返回标签列表
 func (ws *defaultWorkspace) Tags() []string {
 	tagsMap := ws.Space().Tree().Tags()

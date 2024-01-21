@@ -70,8 +70,8 @@ func runListTags(ctx context.Context, ws workspaces.Workspace) error {
 
 // runDeleteTag 删除标签
 func runDeleteTag(ctx context.Context, ws workspaces.Workspace, args []string) error {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 	for _, tagName := range args {
-		logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 		logger.V(1).Info(fmt.Sprintf("delete tag %q", tagName))
 		if err := ws.DeleteTag(ctx, tagName); err != nil {
 			return err
