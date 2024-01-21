@@ -31,6 +31,8 @@ type BranchOptions struct {
 	Remotes bool `json:"remotes,omitempty" yaml:"remotes,omitempty"`
 	// 列出所有分支
 	All bool `json:"all,omitempty" yaml:"all,omitempty"`
+	// 强制创建分支
+	Force bool `json:"force,omitempty" yaml:"force,omitempty"`
 }
 
 // AddPFlags 将选项绑定到命令行参数
@@ -45,4 +47,8 @@ func (o *BranchOptions) AddPFlags(flags *pflag.FlagSet) {
 	flags.BoolVarP(&o.Delete, "delete", "d", o.Delete, "Delete a branch.")
 	flags.BoolVarP(&o.Remotes, "remotes", "r", o.Remotes, "List or delete the remote-tracking branches.")
 	flags.BoolVarP(&o.All, "all", "a", o.All, "List both remote-tracking branches and local branches.")
+	flags.BoolVarP(
+		&o.Force, "force", "f", o.Force,
+		"Replace an existing branch with the given name (instead of failing).",
+	)
 }

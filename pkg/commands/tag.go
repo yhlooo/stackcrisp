@@ -22,7 +22,6 @@ func NewTagCommandWithOptions(opts *options.TagOptions) *cobra.Command {
 			cmdutil.AnnotationRunAsRoot:      cmdutil.AnnotationValueTrue,
 			cmdutil.AnnotationRequireManager: cmdutil.AnnotationValueTrue,
 		},
-		Args: cobra.MaximumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
@@ -36,13 +35,17 @@ func NewTagCommandWithOptions(opts *options.TagOptions) *cobra.Command {
 			}
 
 			switch {
-			case opts.List || len(args) == 0:
+			case opts.List:
 				// 列出标签
 				return runListTags(ctx, ws)
 			case opts.Delete:
 				// 删除标签
-				return runDeleteTag(ctx, ws, args[0])
+				return runDeleteTag(ctx, ws, args)
 			default:
+				if len(args) == 0 {
+					// 列出标签
+					return runListTags(ctx, ws)
+				}
 				// 添加标签
 				return runAddTag(ctx, ws, args, opts)
 			}
@@ -59,17 +62,22 @@ func NewTagCommandWithOptions(opts *options.TagOptions) *cobra.Command {
 func runListTags(ctx context.Context, ws workspaces.Workspace) error {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 	logger.V(1).Info("list tags")
-	for t := range ws.Tags() {
+	for _, t := range ws.Tags() {
 		fmt.Println(t)
 	}
 	return nil
 }
 
 // runDeleteTag 删除标签
-func runDeleteTag(ctx context.Context, ws workspaces.Workspace, tagName string) error {
-	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
-	logger.V(1).Info(fmt.Sprintf("delete tag %q", tagName))
-	return ws.DeleteTag(ctx, tagName)
+func runDeleteTag(ctx context.Context, ws workspaces.Workspace, args []string) error {
+	for _, tagName := range args {
+		logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+		logger.V(1).Info(fmt.Sprintf("delete tag %q", tagName))
+		if err := ws.DeleteTag(ctx, tagName); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // runAddTag 添加标签

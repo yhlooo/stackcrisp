@@ -308,7 +308,7 @@ func (mgr *defaultManager) Commit(
 
 	// 更新分支头指针
 	if branch := ws.Branch(); branch.Name() != "" {
-		if err := space.Tree().UpdateBranch(branch.FullName(), head.ID(), false); err != nil {
+		if err := space.Tree().UpdateBranch(branch.FullName(), head.Parent().ID(), false); err != nil {
 			return nil, fmt.Errorf("update branch HEAD error: %w", err)
 		}
 	}

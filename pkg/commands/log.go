@@ -60,7 +60,7 @@ func NewLogCommandWithOptions(_ *options.LogOptions) *cobra.Command {
 						)
 					} else {
 						if b.IsLocal() {
-							pointers = append(pointers, fmt.Sprintf("\033[34m%s\033[0m", b.LocalName()))
+							pointers = append(pointers, fmt.Sprintf("\033[32m%s\033[0m", b.LocalName()))
 						} else {
 							pointers = append(pointers, fmt.Sprintf("\033[31m%s\033[0m", b.LocalName()))
 						}

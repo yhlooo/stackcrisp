@@ -38,8 +38,10 @@ type Workspace interface {
 	LocalBranches() []Branch
 	// RemoteBranches 返回远程分支列表
 	RemoteBranches() []Branch
-	// SetBranch 设置分支
+	// SetBranch 设置当前分支
 	SetBranch(localName string) error
+	// AddBranch 添加分支
+	AddBranch(ctx context.Context, branchLocalName string, ref string, force bool) error
 
 	// Tags 返回标签列表
 	Tags() []string

@@ -34,7 +34,7 @@ func GetCommitFromNode(ws Workspace, node trees.Node) Commit {
 	// 查找关联分支
 	var branches []Branch
 	for _, b := range ws.AllBranches() {
-		if b.Head().Parent().ID().Hex() == nodeIDHex {
+		if b.Head().ID().Hex() == nodeIDHex {
 			branches = append(branches, b)
 		}
 	}

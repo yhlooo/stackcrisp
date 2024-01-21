@@ -215,12 +215,42 @@ func (ws *defaultWorkspace) RemoteBranches() []Branch {
 	return ret
 }
 
-// SetBranch 设置分支
+// SetBranch 设置当前分支
 func (ws *defaultWorkspace) SetBranch(localName string) error {
-	if err := ws.space.Tree().AddBranch(NewLocalBranch(ws.id, localName).FullName(), ws.head.ID()); err != nil {
+	if err := ws.space.Tree().AddBranch(
+		NewLocalBranch(ws.id, localName).FullName(),
+		ws.head.Parent().ID(),
+	); err != nil {
 		return err
 	}
 	ws.branch = localName
+	return nil
+}
+
+// AddBranch 添加分支
+func (ws *defaultWorkspace) AddBranch(ctx context.Context, branchLocalName string, ref string, force bool) error {
+	node, _, ok := ws.Search(ref)
+	if !ok {
+		return fmt.Errorf("failed to resolve %q as valid ref", ref)
+	}
+
+	branch := NewLocalBranch(ws.id, branchLocalName)
+
+	// 检查是否已经存在该分支
+	if existsNode, ok := ws.Space().Tree().GetByBranch(branch.FullName()); ok && !force {
+		return fmt.Errorf("branch %q already exists at %q", branch.LocalName(), existsNode.ID().Hex())
+	}
+
+	// 添加分支
+	if err := ws.Space().Tree().AddBranch(branch.FullName(), node.ID()); err != nil {
+		return err
+	}
+
+	// 保存
+	if err := ws.Space().Save(ctx); err != nil {
+		return fmt.Errorf("save space info error: %w", err)
+	}
+
 	return nil
 }
 

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -38,29 +39,25 @@ func NewBranchCommandWithOptions(opts *options.BranchOptions) *cobra.Command {
 			switch {
 			case opts.List:
 				// 列出分支
-				var branches []workspaces.Branch
-				switch {
-				case opts.Remotes:
-					branches = ws.RemoteBranches()
-				case opts.All:
-					branches = ws.AllBranches()
-				default:
-					branches = ws.LocalBranches()
-				}
-				for _, name := range branches {
-					fmt.Println(name.LocalName())
-				}
+				return runListBranch(ctx, ws, opts)
 			case opts.ShowCurrent:
 				// 显示当前分支
 				if branch := ws.Branch(); branch != nil {
 					fmt.Println(branch.LocalName())
 				}
 			case opts.Move:
-				// TODO: ...
+				// TODO: 移动分支
 			case opts.Copy:
-				// TODO: ...
+				// TODO: 拷贝分支
 			case opts.Delete:
-				// TODO: ...
+				// TODO: 删除分支
+			default:
+				if len(args) == 0 {
+					// 列出分支
+					return runListBranch(ctx, ws, opts)
+				}
+				// 创建分支
+				return runAddBranch(ctx, ws, args, opts)
 			}
 			return nil
 		},
@@ -70,4 +67,36 @@ func NewBranchCommandWithOptions(opts *options.BranchOptions) *cobra.Command {
 	opts.AddPFlags(cmd.Flags())
 
 	return cmd
+}
+
+// runListBranch 列出分支
+func runListBranch(ctx context.Context, ws workspaces.Workspace, opts *options.BranchOptions) error {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+	logger.V(1).Info(fmt.Sprintf("list branches, remote: %t, all: %t", opts.Remotes, opts.All))
+	// 列出分支
+	var branches []workspaces.Branch
+	switch {
+	case opts.Remotes:
+		branches = ws.RemoteBranches()
+	case opts.All:
+		branches = ws.AllBranches()
+	default:
+		branches = ws.LocalBranches()
+	}
+	for _, name := range branches {
+		fmt.Println(name.LocalName())
+	}
+	return nil
+}
+
+// runAddBranch 添加分支
+func runAddBranch(ctx context.Context, ws workspaces.Workspace, args []string, opts *options.BranchOptions) error {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+	branchLocalName := args[0]
+	ref := "HEAD"
+	if len(args) > 1 {
+		ref = args[1]
+	}
+	logger.V(1).Info(fmt.Sprintf("add branch %q to %q", branchLocalName, ref))
+	return ws.AddBranch(ctx, branchLocalName, ref, opts.Force)
 }

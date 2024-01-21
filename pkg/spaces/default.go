@@ -123,6 +123,32 @@ func (space *defaultSpace) Save(ctx context.Context) error {
 	return nil
 }
 
+// CreateLayer 创建层
+func (space *defaultSpace) CreateLayer(ctx context.Context, base uid.UID) (trees.Node, error) {
+	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
+
+	baseNode, ok := space.layerTree.Get(base)
+	if !ok {
+		return nil, fmt.Errorf("layer %q not found", base.Hex())
+	}
+
+	// 创建下一层
+	logger.V(1).Info("creating next layer ...")
+	next, err := space.layerManger.Create(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create next layer error: %w", err)
+	}
+
+	// 插入节点
+	logger.V(1).Info(fmt.Sprintf("add next layer %s to tree", next.ID()))
+	nextNode := trees.NewNode(next.ID())
+	if err := space.layerTree.AddNode(baseNode.ID(), nextNode); err != nil {
+		return nil, fmt.Errorf("add next layer to tree error: %w", err)
+	}
+
+	return nextNode, nil
+}
+
 // CreateMount 创建一个该空间的挂载
 func (space *defaultSpace) CreateMount(
 	ctx context.Context,
@@ -132,27 +158,15 @@ func (space *defaultSpace) CreateMount(
 ) (mounts.Mount, trees.Node, error) {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 
-	// 找到 lower 的最上层节点
-	lowerNode, ok := space.layerTree.Get(commit)
-	if !ok {
-		return nil, nil, fmt.Errorf("layer %q not found", commit.Hex())
-	}
-
-	// 创建一个作为 upper 层的节点
-	logger.Info("creating upper layer ...")
-	upper, err := space.layerManger.Create(ctx)
+	// 创建下一层
+	upperNode, err := space.CreateLayer(ctx, commit)
 	if err != nil {
-		return nil, nil, fmt.Errorf("create upper layer error: %w", err)
-	}
-	logger.V(1).Info(fmt.Sprintf("add upper layer %s to tree", upper.ID()))
-	upperNode := trees.NewNode(upper.ID())
-	if err := space.layerTree.AddNode(lowerNode.ID(), upperNode); err != nil {
-		return nil, nil, fmt.Errorf("add upper layer to tree error: %w", err)
+		return nil, nil, err
 	}
 
-	// 找到所有 lower 层
+	// 找到所有层
 	var layerSet []layers.Layer
-	cur := lowerNode
+	cur := upperNode
 	for cur != nil {
 		layer, err := space.layerManger.Get(ctx, cur.ID())
 		if err != nil {
@@ -162,9 +176,6 @@ func (space *defaultSpace) CreateMount(
 		cur = cur.Parent()
 	}
 	slices.Reverse(layerSet)
-
-	// 加上 upper 层
-	layerSet = append(layerSet, upper)
 
 	logger.V(1).Info(fmt.Sprintf("mount layers: %v", layerSet))
 	mount, err := mounts.New(ctx, mountID, layerSet, mountOpts)
