@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/yhlooo/stackcrisp/pkg/spaces/trees"
 	"github.com/yhlooo/stackcrisp/pkg/utils/uid"
 )
 
@@ -18,7 +19,7 @@ var (
 )
 
 // ParseBranchFullName 解析分支完整名，获取分支
-func ParseBranchFullName(fullName string) (Branch, error) {
+func ParseBranchFullName(fullName string) (BranchInfo, error) {
 	groups := branchFullNameRegexp.FindStringSubmatch(fullName)
 	if groups == nil {
 		return nil, fmt.Errorf("invalid branch full name: %q (not match %q)", fullName, branchFullNameRegexp.String())
@@ -41,8 +42,8 @@ func ParseBranchFullName(fullName string) (Branch, error) {
 // ParseBranchLocalName 解析分支本地名，获取分支
 //
 // Note: 可能得到多个可能的结果
-func ParseBranchLocalName(workspaceID uid.UID, localName string) []Branch {
-	var ret []Branch
+func ParseBranchLocalName(workspaceID uid.UID, localName string) []BranchInfo {
+	var ret []BranchInfo
 	// 首先可能是个本地分支
 	ret = append(ret, NewLocalBranch(workspaceID, localName))
 	// 如果前缀匹配，也可能是个全局分支
@@ -53,7 +54,7 @@ func ParseBranchLocalName(workspaceID uid.UID, localName string) []Branch {
 }
 
 // NewLocalBranch 创建一个本地分支
-func NewLocalBranch(workspaceID uid.UID, name string) Branch {
+func NewLocalBranch(workspaceID uid.UID, name string) BranchInfo {
 	return &defaultBranch{
 		name:        name,
 		workspaceID: workspaceID,
@@ -61,7 +62,7 @@ func NewLocalBranch(workspaceID uid.UID, name string) Branch {
 }
 
 // NewGlobalBranch 创建一个远程分支
-func NewGlobalBranch(name string) Branch {
+func NewGlobalBranch(name string) BranchInfo {
 	return &defaultBranch{
 		name: name,
 	}
@@ -71,9 +72,12 @@ func NewGlobalBranch(name string) Branch {
 type defaultBranch struct {
 	name        string
 	workspaceID uid.UID
+
+	head trees.Node
 }
 
 var _ Branch = &defaultBranch{}
+var _ BranchInfo = &defaultBranch{}
 
 // Name 返回分支名
 func (branch *defaultBranch) Name() string {
@@ -109,4 +113,18 @@ func (branch *defaultBranch) IsLocal() bool {
 // WorkspaceID 对于 Workspace 本地分支，返回所属 Workspace ID ，否则返回 nil
 func (branch *defaultBranch) WorkspaceID() uid.UID {
 	return branch.workspaceID
+}
+
+// Branch 返回带有指定头指针的分支
+func (branch *defaultBranch) Branch(head trees.Node) Branch {
+	return &defaultBranch{
+		name:        branch.name,
+		workspaceID: branch.workspaceID,
+		head:        head,
+	}
+}
+
+// Head 返回分支头指针
+func (branch *defaultBranch) Head() trees.Node {
+	return branch.head
 }

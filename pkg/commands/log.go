@@ -25,11 +25,11 @@ func NewLogCommandWithOptions(_ *options.LogOptions) *cobra.Command {
 			ctx := cmd.Context()
 			logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
 
-			revision := "HEAD"
+			ref := "HEAD"
 			if len(args) > 0 {
-				revision = args[0]
+				ref = args[0]
 			}
-			logger.V(1).Info(fmt.Sprintf("revision: %q", revision))
+			logger.V(1).Info(fmt.Sprintf("revision: %q", ref))
 
 			// 获取管理器
 			mgr := cmdutil.ManagerFromContext(ctx)
@@ -41,18 +41,18 @@ func NewLogCommandWithOptions(_ *options.LogOptions) *cobra.Command {
 			}
 
 			// 获取提交历史
-			commits, err := mgr.GetHistory(ctx, ws, revision)
+			commits, err := ws.GetHistory(ref)
 			if err != nil {
-				return fmt.Errorf("get history of revision %q error: %w", revision, err)
+				return fmt.Errorf("get history of revision %q error: %w", ref, err)
 			}
 
 			// 打印
 			for _, c := range commits {
 				var pointers []string
-				for _, t := range c.Tags {
+				for _, t := range c.Tags() {
 					pointers = append(pointers, fmt.Sprintf("\033[33mtag: %s\033[0m", t))
 				}
-				for _, b := range c.Branches {
+				for _, b := range c.Branches() {
 					if ws.Branch().FullName() == b.FullName() {
 						pointers = append(
 							[]string{fmt.Sprintf("\033[34mHEAD -> \033[32m%s\033[0m", b.LocalName())},
@@ -70,17 +70,17 @@ func NewLogCommandWithOptions(_ *options.LogOptions) *cobra.Command {
 				if pointers != nil {
 					fmt.Printf(
 						"\033[33mcommit %s\033[0m (%s)\n",
-						c.ID.Hex(), strings.Join(pointers, "\033[33m, \033[0m"),
+						c.ID().Hex(), strings.Join(pointers, "\033[33m, \033[0m"),
 					)
 				} else {
-					fmt.Printf("\033[33mcommit %s\033[0m\n", c.ID.Hex())
+					fmt.Printf("\033[33mcommit %s\033[0m\n", c.ID().Hex())
 				}
 				if c.Date != nil {
-					fmt.Printf("Date:  %s\n", c.Date.Format(time.ANSIC+" -0700"))
+					fmt.Printf("Date:  %s\n", c.Date().Format(time.ANSIC+" -0700"))
 				}
-				if c.Message != "" {
+				if c.Message() != "" {
 					fmt.Println()
-					fmt.Println("    " + strings.ReplaceAll(strings.TrimRight(c.Message, "\r\n "), "\n", "\n    "))
+					fmt.Println("    " + strings.ReplaceAll(strings.TrimRight(c.Message(), "\r\n "), "\n", "\n    "))
 					fmt.Println()
 				}
 			}

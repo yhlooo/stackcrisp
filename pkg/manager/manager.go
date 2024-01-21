@@ -19,11 +19,9 @@ type Manager interface {
 	// Clone 克隆工作空间
 	Clone(ctx context.Context, ws workspaces.Workspace, targetPath string) (workspaces.Workspace, error)
 	// Commit 提交工作空间变更
-	Commit(ctx context.Context, ws workspaces.Workspace, info Commit) (workspaces.Workspace, error)
+	Commit(ctx context.Context, ws workspaces.Workspace, info workspaces.CommitInfo) (workspaces.Workspace, error)
 	// Checkout 切换工作空间所处树的位置
 	Checkout(ctx context.Context, ws workspaces.Workspace, revision string) (workspaces.Workspace, error)
-	// GetHistory 获取提交历史
-	GetHistory(ctx context.Context, ws workspaces.Workspace, revision string) ([]Commit, error)
 }
 
 // Options 管理器选项

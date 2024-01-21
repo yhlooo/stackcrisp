@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/go-logr/logr"
 
@@ -289,15 +288,9 @@ func (mgr *defaultManager) RemoveWorkspaceMount(ctx context.Context, ws workspac
 func (mgr *defaultManager) Commit(
 	ctx context.Context,
 	ws workspaces.Workspace,
-	info Commit,
+	info workspaces.CommitInfo,
 ) (workspaces.Workspace, error) {
 	logger := logr.FromContextOrDiscard(ctx).WithName(loggerName)
-
-	// 补充信息
-	if info.Date == nil {
-		now := time.Now()
-		info.Date = &now
-	}
 
 	// 获取 space
 	space := ws.Space()
@@ -314,8 +307,8 @@ func (mgr *defaultManager) Commit(
 	logger.Info(fmt.Sprintf("forward to new head %q", ws.Head().ID().Hex()))
 
 	// 更新分支头指针
-	if branch := ws.Branch().FullName(); branch != "" {
-		if err := space.Tree().UpdateBranch(branch, head.ID(), false); err != nil {
+	if branch := ws.Branch(); branch.Name() != "" {
+		if err := space.Tree().UpdateBranch(branch.FullName(), head.ID(), false); err != nil {
 			return nil, fmt.Errorf("update branch HEAD error: %w", err)
 		}
 	}
@@ -412,24 +405,6 @@ func (mgr *defaultManager) Clone(
 	}
 
 	return newWS, nil
-}
-
-// GetHistory 获取提交历史
-func (mgr *defaultManager) GetHistory(_ context.Context, ws workspaces.Workspace, revision string) ([]Commit, error) {
-	// 获取指定节点
-	node, _, _ := ws.Search(revision)
-	if node == nil {
-		return nil, fmt.Errorf("revision %q not found", revision)
-	}
-
-	var commits []Commit
-	cur := node
-	for !cur.IsRoot() {
-		commits = append(commits, GetCommitFromNode(ws, cur))
-		cur = cur.Parent()
-	}
-
-	return commits, nil
 }
 
 // saveWorkspaceInfo 保存工作空间信息
